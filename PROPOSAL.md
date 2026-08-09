@@ -1,0 +1,3 @@
+# Project Proposal
+
+This project is a conversational assistant for calculus tutoring. It answers theoretical questions and walks through worked exercises step by step, citing the specific rule or theorem behind each step rather than just giving a final answer. It targets students taking an introductory calculus course who need on-demand practice and explanations outside of class hours. The knowledge base will be built from calculus lecture notes and textbook chapters covering limits, derivatives, and integrals, retrieved via RAG so that answers stay grounded in the assigned course material instead of the model's general knowledge. Given a student's exercise or question, the assistant returns both the final answer and the step-by-step reasoning behind it.
