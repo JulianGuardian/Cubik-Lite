@@ -34,7 +34,7 @@ with open(SYSTEM_PROMPT_PATH, encoding="utf-8") as f:
 
 # Initialize Gemini client
 client = genai.Client(api_key=API_KEY)
-MODEL = "gemini-2.0-flash"
+MODEL = "gemini-3.6-flash"
 
 # Initialize context manager (sliding window: 10 turns, 12k chars)
 manager = SlidingWindowManager(

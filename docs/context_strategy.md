@@ -76,5 +76,5 @@ flowchart TD
 
 La lógica de manejo de contexto se encuentra implementada y testeada en los siguientes módulos del repositorio:
 
-- **Gestor de contexto**: [`context_manager.py`](file:///Users/gabrielmolina/Desktop/repos2/Cubik-Lite/context_manager.py)
-- **Pruebas unitarias**: [`test_context_manager.py`](file:///Users/gabrielmolina/Desktop/repos2/Cubik-Lite/tests/test_context_manager.py)
+- **Gestor de contexto**: [`context_manager.py`](../context_manager.py)
+- **Pruebas unitarias**: [`test_context_manager.py`](../tests/test_context_manager.py)
