@@ -14,9 +14,6 @@ from google import genai
 
 from context_manager import SlidingWindowManager
 
-# ── Setup ───────────────────────────────────────────────────────────────────
-
-# Load environment variables from .env
 load_dotenv()
 
 API_KEY = os.getenv("GEMINI_API_KEY")
@@ -27,16 +24,13 @@ if not API_KEY or API_KEY == "PEGA_TU_API_KEY_AQUI":
     print("   3. Pégala en el archivo .env")
     sys.exit(1)
 
-# Load system prompt
 SYSTEM_PROMPT_PATH = Path(__file__).parent / "prompts" / "system_prompt.txt"
 with open(SYSTEM_PROMPT_PATH, encoding="utf-8") as f:
     SYSTEM_PROMPT = f.read()
 
-# Initialize Gemini client
 client = genai.Client(api_key=API_KEY)
 MODEL = "gemini-3.6-flash"
 
-# Initialize context manager (sliding window: 10 turns, 12k chars)
 manager = SlidingWindowManager(
     system_prompt=SYSTEM_PROMPT,
     max_turns=10,
@@ -56,11 +50,9 @@ def send_message(user_input: str) -> str:
     manager.add_user_message(user_input)
     messages = manager.get_messages()
 
-    # Build contents for the Gemini API
-    # The first message is the system prompt (handled via system_instruction)
-    # The rest are the conversation history
+    # The system prompt travels in system_instruction, not in contents.
     history_contents = []
-    for msg in messages[1:]:  # Skip system prompt
+    for msg in messages[1:]:
         role = "user" if msg["role"] == "user" else "model"
         history_contents.append(
             genai.types.Content(
@@ -107,7 +99,6 @@ def format_response(raw: str) -> str:
                 lines.append(f"   {i}. {step}")
         return "\n".join(lines)
     except (json.JSONDecodeError, TypeError):
-        # If not valid JSON, return as-is
         return f"\n{raw}"
 
 
