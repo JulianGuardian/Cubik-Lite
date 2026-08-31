@@ -1,35 +1,20 @@
 """Main entry point for the Cubik-Lite Integral Calculus Tutor.
 
-Interactive terminal chatbot that uses the Gemini API and the
-SlidingWindowManager for conversation history management.
+Interactive terminal chatbot that uses litellm (Gemini or a local Ollama
+model, see llm_client.py) and the SlidingWindowManager for conversation
+history management.
 """
 
-import json
-import os
-import sys
+from json import JSONDecodeError, loads
 from pathlib import Path
 
-from dotenv import load_dotenv
-from google import genai
-
 from context_manager import SlidingWindowManager
-
-load_dotenv()
-
-API_KEY = os.getenv("GEMINI_API_KEY")
-if not API_KEY or API_KEY == "PEGA_TU_API_KEY_AQUI":
-    print("❌ Error: Configura tu GEMINI_API_KEY en el archivo .env")
-    print("   1. Ve a https://aistudio.google.com/apikey")
-    print("   2. Crea una API key")
-    print("   3. Pégala en el archivo .env")
-    sys.exit(1)
+from litellm import completion
+from llm_client import CHAT_MODEL, USING_GEMINI
 
 SYSTEM_PROMPT_PATH = Path(__file__).parent / "prompts" / "system_prompt.txt"
 with open(SYSTEM_PROMPT_PATH, encoding="utf-8") as f:
     SYSTEM_PROMPT = f.read()
-
-client = genai.Client(api_key=API_KEY)
-MODEL = "gemini-3.6-flash"
 
 manager = SlidingWindowManager(
     system_prompt=SYSTEM_PROMPT,
@@ -39,7 +24,7 @@ manager = SlidingWindowManager(
 
 
 def send_message(user_input: str) -> str:
-    """Send a message to the Gemini API using the managed conversation history.
+    """Send a message to the LLM using the managed conversation history.
 
     Args:
         user_input: The student's question or message.
@@ -50,27 +35,13 @@ def send_message(user_input: str) -> str:
     manager.add_user_message(user_input)
     messages = manager.get_messages()
 
-    # The system prompt travels in system_instruction, not in contents.
-    history_contents = []
-    for msg in messages[1:]:
-        role = "user" if msg["role"] == "user" else "model"
-        history_contents.append(
-            genai.types.Content(
-                role=role,
-                parts=[genai.types.Part(text=msg["content"])],
-            )
-        )
-
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=history_contents,
-        config=genai.types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            temperature=0.3,
-        ),
+    response = completion(
+        model=CHAT_MODEL,
+        messages=messages,
+        temperature=0.3,
     )
 
-    assistant_text = response.text
+    assistant_text = response.choices[0].message.content
     manager.add_assistant_message(assistant_text)
     return assistant_text
 
@@ -85,7 +56,7 @@ def format_response(raw: str) -> str:
         A formatted string for terminal display.
     """
     try:
-        data = json.loads(raw)
+        data = loads(raw)
         lines = []
         lines.append(f"\n📝 Respuesta: {data.get('answer', 'N/A')}")
         if data.get("rule"):
@@ -98,7 +69,7 @@ def format_response(raw: str) -> str:
             for i, step in enumerate(steps, 1):
                 lines.append(f"   {i}. {step}")
         return "\n".join(lines)
-    except (json.JSONDecodeError, TypeError):
+    except (JSONDecodeError, TypeError):
         return f"\n{raw}"
 
 
@@ -106,6 +77,8 @@ def main() -> None:
     """Run the interactive terminal chatbot."""
     print("=" * 60)
     print("🧮  Cubik-Lite — Tutor de Cálculo Integral")
+    provider = "Gemini" if USING_GEMINI else "Ollama local"
+    print(f"⚙️  Usando {provider}-({CHAT_MODEL})")
     print("=" * 60)
     print("Escribe tu pregunta de cálculo integral.")
     print("Comandos: 'salir' para terminar, 'limpiar' para reiniciar.\n")
