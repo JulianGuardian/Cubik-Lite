@@ -18,7 +18,7 @@ USING_GEMINI = bool(_GEMINI_API_KEY) and _GEMINI_API_KEY != "PEGA_TU_API_KEY_AQU
 
 if USING_GEMINI:
     CHAT_MODEL = getenv("GEMINI_CHAT_MODEL", "gemini/gemini-3.6-flash")
-    EMBED_MODEL = getenv("GEMINI_EMBED_MODEL", "gemini/text-embedding-004")
+    EMBED_MODEL = getenv("GEMINI_EMBED_MODEL", "gemini/gemini-embedding-001")
 else:
     CHAT_MODEL = getenv("LOCAL_CHAT_MODEL", "ollama_chat/qwen2.5:14b")
     EMBED_MODEL = getenv("LOCAL_EMBED_MODEL", "ollama/nomic-embed-text")

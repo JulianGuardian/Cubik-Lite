@@ -1,8 +1,8 @@
 """Main entry point for the Cubik-Lite Integral Calculus Tutor.
 
 Interactive terminal chatbot that uses litellm (Gemini or a local Ollama
-model, see llm_client.py) and the SlidingWindowManager for conversation
-history management.
+model, see llm_client.py), the SlidingWindowManager for conversation history
+management, and retriever.py to ground answers in data/ via RAG.
 """
 
 from json import JSONDecodeError, loads
@@ -11,6 +11,7 @@ from pathlib import Path
 from context_manager import SlidingWindowManager
 from litellm import completion
 from llm_client import CHAT_MODEL, USING_GEMINI
+from retriever import query as retrieve
 
 SYSTEM_PROMPT_PATH = Path(__file__).parent / "prompts" / "system_prompt.txt"
 with open(SYSTEM_PROMPT_PATH, encoding="utf-8") as f:
@@ -24,7 +25,11 @@ manager = SlidingWindowManager(
 
 
 def send_message(user_input: str) -> str:
-    """Send a message to the LLM using the managed conversation history.
+    """Retrieve grounding context and send a message to the LLM.
+
+    The conversation history keeps the student's original question, but the
+    turn actually sent to the LLM is augmented with retrieved knowledge base
+    chunks so answers stay grounded in data/.
 
     Args:
         user_input: The student's question or message.
@@ -33,7 +38,22 @@ def send_message(user_input: str) -> str:
         The assistant's response text.
     """
     manager.add_user_message(user_input)
+
+    chunks = retrieve(user_input)
+    print("\n📚 Contexto recuperado:")
+    for chunk in chunks:
+        print(f"   [{chunk['source']}] {chunk['text'][:80]}...")
+
+    context_block = "\n\n---\n\n".join(
+        f"[Fuente: {c['source']}]\n{c['text']}" for c in chunks
+    )
+    augmented_question = (
+        f"Contexto recuperado:\n{context_block}\n\n"
+        f"Pregunta del estudiante: {user_input}"
+    )
+
     messages = manager.get_messages()
+    messages[-1] = {"role": "user", "content": augmented_question}
 
     response = completion(
         model=CHAT_MODEL,
@@ -68,6 +88,8 @@ def format_response(raw: str) -> str:
             lines.append("\n📋 Pasos:")
             for i, step in enumerate(steps, 1):
                 lines.append(f"   {i}. {step}")
+        if data.get("source"):
+            lines.append(f"\n📖 Fuente: {data['source']}")
         return "\n".join(lines)
     except (JSONDecodeError, TypeError):
         return f"\n{raw}"

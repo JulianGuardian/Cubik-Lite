@@ -6,3 +6,6 @@ __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+
+# ChromaDB persisted index (rebuild with retriever.py)
+chroma_db*/
