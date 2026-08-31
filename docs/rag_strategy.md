@@ -61,7 +61,7 @@ del estudiante).
 | `chunk_size` | `int` | `600` | Caracteres máximos por chunk. |
 | `overlap` | `int` | `100` | Caracteres compartidos entre chunks consecutivos. |
 | `n_results` | `int` | `5` | Chunks recuperados por pregunta. |
-| Modelo de embeddings | `str` | `gemini/text-embedding-004` (Gemini) o `ollama/nomic-embed-text` (local) | Seleccionado automáticamente por `llm_client.py` según haya o no `GEMINI_API_KEY`. |
+| Modelo de embeddings | `str` | `gemini/gemini-embedding-001` (Gemini) o `ollama/nomic-embed-text` (local) | Seleccionado automáticamente por `llm_client.py` según haya o no `GEMINI_API_KEY`. |
 
 ---
 

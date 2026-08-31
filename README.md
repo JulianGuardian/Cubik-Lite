@@ -39,7 +39,9 @@ conocimiento propia mediante RAG en vez de depender solo del conocimiento genera
    ollama pull nomic-embed-text
    ```
 
-3. Construye el índice de RAG (hay que rehacerlo si cambia el contenido de `data/`):
+3. Construye el índice de RAG (hay que rehacerlo si cambia el contenido de `data/`, **o si cambias de
+   proveedor**: los embeddings de Gemini y de Ollama no son intercambiables, así que alternar entre
+   `GEMINI_API_KEY` presente/ausente exige reindexar):
 
    ```bash
    python retriever.py
