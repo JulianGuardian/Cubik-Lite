@@ -10,6 +10,7 @@ from pathlib import Path
 from shutil import rmtree
 
 from chromadb import PersistentClient
+from chromadb.errors import NotFoundError
 
 from llm_client import embed
 
@@ -83,7 +84,14 @@ def query(question: str, n_results: int = 5) -> list[dict[str, str]]:
         A list of {"text": ..., "source": ...} dicts, most relevant first.
     """
     client = PersistentClient(path=str(CHROMA_DIR))
-    collection = client.get_collection(COLLECTION_NAME)
+    try:
+        collection = client.get_collection(COLLECTION_NAME)
+    except NotFoundError as e:
+        raise RuntimeError(
+            f"No existe el índice de RAG ({COLLECTION_NAME!r}). "
+            "Corre 'python retriever.py' primero para indexar data/."
+        ) from e
+
     results = collection.query(query_embeddings=[embed(question)], n_results=n_results)
     return [
         {"text": doc, "source": meta["source"]}
