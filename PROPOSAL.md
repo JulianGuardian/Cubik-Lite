@@ -6,7 +6,7 @@ For Corte 1, the assistant's scope has been narrowed to **integral calculus** (i
 
 ## Example Questions
 
-Once RAG is added in Week 4, the assistant should be able to answer questions such as:
+With RAG grounding answers in [data/](data/README.md) (see [README.md](README.md) for setup), the assistant can answer questions such as:
 
 - What is the integral of x·e^x dx, and which technique applies?
 - Find the area under the curve y = sin(x) from 0 to π.
