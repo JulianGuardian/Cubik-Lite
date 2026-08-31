@@ -7,6 +7,7 @@ whichever provider (Gemini or local Ollama) is active.
 """
 
 from pathlib import Path
+from shutil import rmtree
 
 from chromadb import PersistentClient
 
@@ -41,14 +42,18 @@ def chunk_text(text: str, chunk_size: int = 600, overlap: int = 100) -> list[str
 def ingest() -> tuple[int, int]:
     """Chunk and embed every markdown file in data/, replacing the persisted index.
 
+    Wipes CHROMA_DIR first rather than calling delete_collection(): Chroma's
+    delete_collection() only cleans up a collection's on-disk HNSW segment
+    when it was already loaded into memory, so it otherwise leaves orphaned
+    UUID-named folders behind on every reindex (a long-standing upstream bug,
+    see https://github.com/chroma-core/chroma/issues/1009).
+
     Returns:
         A (file_count, chunk_count) tuple.
     """
+    if CHROMA_DIR.exists():
+        rmtree(CHROMA_DIR)
     client = PersistentClient(path=str(CHROMA_DIR))
-    try:
-        client.delete_collection(COLLECTION_NAME)
-    except Exception:
-        pass
     collection = client.create_collection(COLLECTION_NAME)
 
     files = sorted(f for f in DATA_DIR.rglob("*.md") if f.name != "README.md")
