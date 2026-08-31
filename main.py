@@ -78,7 +78,7 @@ def main() -> None:
     print("=" * 60)
     print("🧮  Cubik-Lite — Tutor de Cálculo Integral")
     provider = "Gemini" if USING_GEMINI else "Ollama local"
-    print(f"Usando {provider}-({CHAT_MODEL})")
+    print(f"⚙️  Usando {provider}-({CHAT_MODEL})")
     print("=" * 60)
     print("Escribe tu pregunta de cálculo integral.")
     print("Comandos: 'salir' para terminar, 'limpiar' para reiniciar.\n")
