@@ -10,6 +10,7 @@ conocimiento propia mediante RAG en vez de depender solo del conocimiento genera
 | Pieza | Archivo | Qué hace |
 |---|---|---|
 | Chat | [`main.py`](main.py) | Loop interactivo de terminal. |
+| Agente ADK | [`agents/cubik_tutor/agent.py`](agents/cubik_tutor/agent.py) | El mismo tutor como agente de Google ADK: el RAG es una tool y guarda preferencias y progreso en el estado de sesión. Ver [docs/adk_agent.md](docs/adk_agent.md). |
 | Selección de modelo | [`llm_client.py`](llm_client.py) | Gemini si hay `GEMINI_API_KEY`, si no un modelo local vía Ollama. |
 | Contexto conversacional | [`context_manager.py`](context_manager.py) | Ventana deslizante de turnos + presupuesto de caracteres. Ver [docs/context_strategy.md](docs/context_strategy.md). |
 | RAG | [`retriever.py`](retriever.py) | Indexa `data/` en ChromaDB y recupera los chunks más relevantes por pregunta. Ver [docs/rag_strategy.md](docs/rag_strategy.md). |
@@ -55,12 +56,24 @@ conocimiento propia mediante RAG en vez de depender solo del conocimiento genera
 
    Comandos dentro del chat: `salir` para terminar, `limpiar` para reiniciar el historial.
 
+5. (Opcional) Corre el tutor como agente de Google ADK, desde la raíz del repo. También necesita el índice del
+   paso 3:
+
+   ```bash
+   adk web agents              # UI web con trace de cada llamada a tools
+   adk run agents/cubik_tutor  # mismo agente en la terminal
+   ```
+
+   Para que las preferencias del estudiante (`user:`) sobrevivan a reiniciar `adk web`, usa un session service
+   persistente: `adk web agents --session_service_uri sqlite:///adk_sessions.db`.
+
 ## Tests
 
 ```bash
 pytest tests/
 ```
 
-Cubre el gestor de contexto (`context_manager.py`) y el chunking del RAG (`retriever.py`). La indexación y
+Cubre el gestor de contexto (`context_manager.py`), el chunking del RAG (`retriever.py`) y las tools del agente ADK
+(`agents/cubik_tutor/agent.py`). La indexación y
 recuperación reales, que dependen de un proveedor de embeddings activo (Gemini o Ollama), se verifican a mano
-corriendo `python retriever.py` y `python main.py`.
+corriendo `python retriever.py`, `python main.py` y `adk web agents`.
