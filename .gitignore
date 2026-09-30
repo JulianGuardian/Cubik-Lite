@@ -9,3 +9,7 @@ __pycache__/
 
 # ChromaDB persisted index (rebuild with retriever.py)
 chroma_db*/
+
+# Sesiones persistidas de ADK (adk web --session_service_uri sqlite:///...)
+adk_sessions.db
+.adk/
