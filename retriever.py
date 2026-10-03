@@ -11,7 +11,6 @@ from shutil import rmtree
 
 from chromadb import PersistentClient
 from chromadb.errors import NotFoundError
-
 from llm_client import embed
 
 DATA_DIR = Path(__file__).parent / "data"
