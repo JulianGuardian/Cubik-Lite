@@ -11,7 +11,19 @@ returns the expression it interpreted, so the agent can show it to the student
 and a mistranslation is visible instead of silently checking something else.
 """
 
-from sympy import E, Expr, Integral, Symbol, diff, integrate, log, nan, pi, simplify, zoo
+from sympy import (
+    E,
+    Expr,
+    Integral,
+    Symbol,
+    diff,
+    integrate,
+    log,
+    nan,
+    pi,
+    simplify,
+    zoo,
+)
 from sympy.parsing.sympy_parser import (
     convert_xor,
     implicit_multiplication_application,
@@ -19,7 +31,10 @@ from sympy.parsing.sympy_parser import (
     standard_transformations,
 )
 
-TRANSFORMATIONS = standard_transformations + (implicit_multiplication_application, convert_xor)
+TRANSFORMATIONS = standard_transformations + (
+    implicit_multiplication_application,
+    convert_xor,
+)
 
 # Points where a non-simplifiable difference is evaluated numerically. Away from
 # 0 and negative numbers so log/sqrt stay defined for typical exercises.
@@ -46,9 +61,13 @@ def parse(expression: str, variable: Symbol) -> Expr:
     """
     local_dict = {variable.name: variable, "e": E, "ln": log, "pi": pi}
     try:
-        return parse_expr(expression, local_dict=local_dict, transformations=TRANSFORMATIONS)
+        return parse_expr(
+            expression, local_dict=local_dict, transformations=TRANSFORMATIONS
+        )
     except Exception as e:  # parse_expr raises SyntaxError, TokenError, TypeError...
-        raise ParseError(f"No se pudo interpretar la expresión {expression!r}: {e}") from e
+        raise ParseError(
+            f"No se pudo interpretar la expresión {expression!r}: {e}"
+        ) from e
 
 
 def _numeric_difference(expr: Expr, variable: Symbol) -> list[float]:
@@ -82,7 +101,10 @@ def _verdict(difference: Expr, variable: Symbol | None = None) -> str:
 
 
 def solve_integral(
-    integrand: str, variable: str = "x", lower: str | None = None, upper: str | None = None
+    integrand: str,
+    variable: str = "x",
+    lower: str | None = None,
+    upper: str | None = None,
 ) -> dict:
     """Compute an integral exactly with SymPy. Give both limits for a definite integral, none for an indefinite one.
 
@@ -99,7 +121,9 @@ def solve_integral(
     """
     x = Symbol(variable)
     if (lower is None) != (upper is None):
-        return {"error": "Para una integral definida hacen falta los dos límites (lower y upper)."}
+        return {
+            "error": "Para una integral definida hacen falta los dos límites (lower y upper)."
+        }
     try:
         f = parse(integrand, x)
         bounds = (parse(lower, x), parse(upper, x)) if lower is not None else None
@@ -118,7 +142,12 @@ def solve_integral(
     if value.has(Integral):
         approximation = Integral(f, (x, *bounds)).evalf()
         return {**result, "closed_form": False, "approximation": str(approximation)}
-    return {**result, "closed_form": True, "value": str(value), "approximation": str(value.evalf())}
+    return {
+        **result,
+        "closed_form": True,
+        "value": str(value),
+        "approximation": str(value.evalf()),
+    }
 
 
 def check_antiderivative(integrand: str, candidate: str, variable: str = "x") -> dict:
@@ -176,7 +205,9 @@ def check_definite_integral(
     except ParseError as e:
         return {"error": str(e)}
     if candidate_expr.free_symbols:
-        return {"error": f"El valor de una integral definida debe ser un número, no {candidate!r}."}
+        return {
+            "error": f"El valor de una integral definida debe ser un número, no {candidate!r}."
+        }
 
     exact = integrate(f, (x, a, b))
     if exact.has(Integral):

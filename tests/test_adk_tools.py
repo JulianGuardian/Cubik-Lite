@@ -9,7 +9,6 @@ verified manually with `adk web agents`.
 from types import SimpleNamespace
 
 import pytest
-
 from agents.cubik_tutor import agent
 
 
@@ -37,7 +36,10 @@ def test_search_knowledge_base_stores_sources_in_temp_state(
 ) -> None:
     """Verify retrieval goes through retriever.query and sources land in temp: state."""
     chunks = [
-        {"text": "∫ u dv = uv - ∫ v du", "source": "techniques/integration_by_parts.md"},
+        {
+            "text": "∫ u dv = uv - ∫ v du",
+            "source": "techniques/integration_by_parts.md",
+        },
         {"text": "LIATE", "source": "techniques/integration_by_parts.md"},
         {"text": "∫ e^x dx = e^x + C", "source": "indefinite_integrals/basic_rules.md"},
     ]
@@ -70,7 +72,9 @@ def test_set_explanation_level_rejects_unknown_level(ctx: SimpleNamespace) -> No
     assert ctx.state == {}
 
 
-def test_log_practice_attempt_updates_session_and_app_state(ctx: SimpleNamespace) -> None:
+def test_log_practice_attempt_updates_session_and_app_state(
+    ctx: SimpleNamespace,
+) -> None:
     """Verify each attempt is appended to the session log and counted app-wide."""
     ctx.state["app:total_attempts_all_users"] = 41
 

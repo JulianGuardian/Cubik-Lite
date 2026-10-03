@@ -4,9 +4,8 @@ Everything here is exact symbolic math, so no model or embedding provider is
 needed.
 """
 
-import pytest
-
 import math_tools
+import pytest
 
 
 @pytest.mark.parametrize(
