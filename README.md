@@ -1,5 +1,7 @@
 # Cubik-Lite — Tutor de Cálculo Integral
 
+**Español** | [English](README.en.md)
+
 Asistente conversacional de tutoría para cálculo integral. Responde preguntas de teoría y guía la resolución de
 ejercicios paso a paso, citando la regla o técnica aplicada, y fundamenta sus respuestas en una base de
 conocimiento propia mediante RAG en vez de depender solo del conocimiento general del modelo. Ver
