@@ -92,7 +92,7 @@ def set_explanation_level(level: str, tool_context: ToolContext) -> dict:
     level = level.lower().strip()
     if level not in EXPLANATION_LEVELS:
         return {
-            "error": f"Nivel desconocido {level!r}. Usa uno de: {', '.join(EXPLANATION_LEVELS)}."
+            "error": f"Unknown level {level!r}. Use one of: {', '.join(EXPLANATION_LEVELS)}."
         }
     tool_context.state["user:explanation_level"] = level
     return {"explanation_level": level}

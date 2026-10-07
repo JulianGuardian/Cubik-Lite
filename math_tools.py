@@ -66,7 +66,7 @@ def parse(expression: str, variable: Symbol) -> Expr:
         )
     except Exception as e:  # parse_expr raises SyntaxError, TokenError, TypeError...
         raise ParseError(
-            f"No se pudo interpretar la expresión {expression!r}: {e}"
+            f"Could not parse the expression {expression!r}: {e}"
         ) from e
 
 
@@ -122,7 +122,7 @@ def solve_integral(
     x = Symbol(variable)
     if (lower is None) != (upper is None):
         return {
-            "error": "Para una integral definida hacen falta los dos límites (lower y upper)."
+            "error": "A definite integral needs both limits (lower and upper)."
         }
     try:
         f = parse(integrand, x)
@@ -206,7 +206,7 @@ def check_definite_integral(
         return {"error": str(e)}
     if candidate_expr.free_symbols:
         return {
-            "error": f"El valor de una integral definida debe ser un número, no {candidate!r}."
+            "error": f"The value of a definite integral must be a number, not {candidate!r}."
         }
 
     exact = integrate(f, (x, a, b))
