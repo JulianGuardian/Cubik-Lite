@@ -6,7 +6,7 @@ retrieval is a tool the model calls instead of a block main.py prepends, and
 conversation history lives in ADK's SessionService instead of
 SlidingWindowManager.
 
-State scopes used by the tools (see docs/adk_agent.md):
+State scopes used by the tools (see docs/en/adk_agent.md):
 - temp:last_sources        -> only for the current turn.
 - practice_log             -> this session (conversation) only.
 - user:explanation_level   -> this student, across all of their sessions.
@@ -23,18 +23,19 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from google.adk.agents import Agent  # noqa: E402
-from google.adk.models.lite_llm import LiteLlm  # noqa: E402
-from google.adk.tools import ToolContext  # noqa: E402
-
-import retriever  # noqa: E402
-from llm_client import CHAT_MODEL, USING_GEMINI  # noqa: E402
+import retriever
+from google.adk.agents import Agent
+from google.adk.models.lite_llm import LiteLlm
+from google.adk.tools import ToolContext
+from llm_client import CHAT_MODEL, USING_GEMINI
 
 EXPLANATION_LEVELS = ("basico", "detallado")
 
 # Gemini goes through ADK's native integration (it reads GEMINI_API_KEY, which
 # llm_client already loaded from .env); the Ollama fallback goes through LiteLlm.
-MODEL = CHAT_MODEL.removeprefix("gemini/") if USING_GEMINI else LiteLlm(model=CHAT_MODEL)
+MODEL = (
+    CHAT_MODEL.removeprefix("gemini/") if USING_GEMINI else LiteLlm(model=CHAT_MODEL)
+)
 
 SYSTEM_PROMPT = (REPO_ROOT / "prompts" / "system_prompt.txt").read_text(
     encoding="utf-8"
@@ -91,13 +92,15 @@ def set_explanation_level(level: str, tool_context: ToolContext) -> dict:
     level = level.lower().strip()
     if level not in EXPLANATION_LEVELS:
         return {
-            "error": f"Nivel desconocido {level!r}. Usa uno de: {', '.join(EXPLANATION_LEVELS)}."
+            "error": f"Unknown level {level!r}. Use one of: {', '.join(EXPLANATION_LEVELS)}."
         }
     tool_context.state["user:explanation_level"] = level
     return {"explanation_level": level}
 
 
-def log_practice_attempt(technique: str, solved: bool, tool_context: ToolContext) -> dict:
+def log_practice_attempt(
+    technique: str, solved: bool, tool_context: ToolContext
+) -> dict:
     """Record an exercise the student just worked on in this session.
 
     Args:
@@ -130,14 +133,18 @@ def get_progress_summary(tool_context: ToolContext) -> dict:
     """
     by_technique: dict[str, dict[str, int]] = {}
     for entry in tool_context.state.get("practice_log", []):
-        stats = by_technique.setdefault(entry["technique"], {"attempts": 0, "solved": 0})
+        stats = by_technique.setdefault(
+            entry["technique"], {"attempts": 0, "solved": 0}
+        )
         stats["attempts"] += 1
         stats["solved"] += int(entry["solved"])
 
     return {
         "by_technique": by_technique,
         "explanation_level": tool_context.state.get("user:explanation_level"),
-        "total_attempts_all_users": tool_context.state.get("app:total_attempts_all_users", 0),
+        "total_attempts_all_users": tool_context.state.get(
+            "app:total_attempts_all_users", 0
+        ),
     }
 
 

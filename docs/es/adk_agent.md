@@ -58,7 +58,7 @@ importar `retriever.py` y `llm_client.py`. El agente vive en `agents/` y no en l
 
 ## 4. Relación con la propuesta de Corte 2
 
-[PROPOSAL.md](../PROPOSAL.md) plantea un **triage agent** que clasifica la pregunta y **solver agents** por
+[PROPOSAL.md](../../PROPOSAL.md) plantea un **triage agent** que clasifica la pregunta y **solver agents** por
 técnica. Este agente es la base de ese diseño:
 
 - `cubik_tutor` pasa a ser el solver genérico. Los solvers por técnica serían copias con una instrucción más

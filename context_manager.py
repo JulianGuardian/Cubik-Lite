@@ -122,9 +122,9 @@ class SlidingWindowManager:
         """
         self._trim_to_window()
         self._trim_to_budget()
-        return [
-            {"role": "system", "content": self.system_prompt}
-        ] + [dict(msg) for msg in self._messages]
+        return [{"role": "system", "content": self.system_prompt}] + [
+            dict(msg) for msg in self._messages
+        ]
 
     def clear(self) -> None:
         """Clear conversation history while keeping the system prompt."""

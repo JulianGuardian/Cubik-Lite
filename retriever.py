@@ -11,7 +11,6 @@ from shutil import rmtree
 
 from chromadb import PersistentClient
 from chromadb.errors import NotFoundError
-
 from llm_client import embed
 
 DATA_DIR = Path(__file__).parent / "data"
@@ -88,8 +87,8 @@ def query(question: str, n_results: int = 5) -> list[dict[str, str]]:
         collection = client.get_collection(COLLECTION_NAME)
     except NotFoundError as e:
         raise RuntimeError(
-            f"No existe el índice de RAG ({COLLECTION_NAME!r}). "
-            "Corre 'python retriever.py' primero para indexar data/."
+            f"The RAG index ({COLLECTION_NAME!r}) does not exist. "
+            "Run 'python retriever.py' first to index data/."
         ) from e
 
     results = collection.query(query_embeddings=[embed(question)], n_results=n_results)
@@ -101,4 +100,4 @@ def query(question: str, n_results: int = 5) -> list[dict[str, str]]:
 
 if __name__ == "__main__":
     file_count, chunk_count = ingest()
-    print(f"Indexados {chunk_count} chunks de {file_count} archivos en {CHROMA_DIR}")
+    print(f"Indexed {chunk_count} chunks from {file_count} files into {CHROMA_DIR}")

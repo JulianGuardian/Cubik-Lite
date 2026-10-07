@@ -38,18 +38,18 @@ def embed(text: str) -> list[float]:
 
 
 if __name__ == "__main__":
-    provider = "Gemini" if USING_GEMINI else "Ollama local"
-    print(f"Proveedor activo: {provider}")
+    provider = "Gemini" if USING_GEMINI else "local Ollama"
+    print(f"Active provider: {provider}")
     print(f"  CHAT_MODEL  = {CHAT_MODEL}")
     print(f"  EMBED_MODEL = {EMBED_MODEL}")
 
-    print("\nProbando chat...")
+    print("\nTesting chat...")
     response = completion(
         model=CHAT_MODEL,
-        messages=[{"role": "user", "content": "Responde solo con: ok"}],
+        messages=[{"role": "user", "content": "Reply only with: ok"}],
     )
-    print("  Respuesta:", response.choices[0].message.content.strip())
+    print("  Response:", response.choices[0].message.content.strip())
 
-    print("\nProbando embeddings...")
-    vector = embed("La integral de 2x dx es x^2 + C.")
-    print(f"  Vector de dimension {len(vector)} generado correctamente.")
+    print("\nTesting embeddings...")
+    vector = embed("The integral of 2x dx is x^2 + C.")
+    print(f"  Generated a vector of dimension {len(vector)}.")
