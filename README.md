@@ -19,7 +19,7 @@ La documentación técnica está en español en [`docs/es/`](docs/es/) y en ingl
 | Cálculo exacto | [`math_tools.py`](math_tools.py) | Resuelve integrales y comprueba respuestas con SymPy, para que el resultado y el veredicto no dependan del modelo. |
 | Selección de modelo | [`llm_client.py`](llm_client.py) | Gemini si hay `GEMINI_API_KEY`, si no un modelo local vía Ollama. |
 | Contexto conversacional | [`context_manager.py`](context_manager.py) | Ventana deslizante de turnos + presupuesto de caracteres. Ver [docs/es/context_strategy.md](docs/es/context_strategy.md). |
-| RAG | [`retriever.py`](retriever.py) | Indexa `data/` en ChromaDB y recupera los chunks más relevantes por pregunta. Ver [docs/es/rag_strategy.md](docs/es/rag_strategy.md). |
+| RAG | [`retriever.py`](retriever.py) | Indexa `data/` en ChromaDB, recupera chunks candidatos por pregunta y los re-rankea con el modelo de chat para quedarse con los mejores. Ver [docs/es/rag_strategy.md](docs/es/rag_strategy.md). |
 | System prompt | [`prompts/system_prompt.txt`](prompts/system_prompt.txt) | Rol, alcance, reglas de rechazo y formato de salida JSON. |
 | Prompts del equipo | [`prompts/team/`](prompts/team/) | Reglas compartidas (`shared.txt`) y el rol de cada agente del equipo multiagente. |
 | Base de conocimiento | [`data/`](data/README.md) | Reglas, técnicas y aplicaciones de integración, en Markdown. |
@@ -80,7 +80,7 @@ La documentación técnica está en español en [`docs/es/`](docs/es/) y en ingl
 pytest tests/
 ```
 
-Cubre el gestor de contexto (`context_manager.py`), el chunking del RAG (`retriever.py`), las tools del agente ADK
+Cubre el gestor de contexto (`context_manager.py`), el chunking y el re-ranking del RAG (`retriever.py`), las tools del agente ADK
 (`agents/cubik_tutor/agent.py`), las tools de SymPy (`math_tools.py`) y la estructura del equipo multiagente
 (`agents/cubik_team/agent.py`). La indexación y recuperación reales, que dependen de un proveedor de embeddings
 activo (Gemini o Ollama), y el enrutamiento del equipo, que depende del modelo, se verifican a mano corriendo

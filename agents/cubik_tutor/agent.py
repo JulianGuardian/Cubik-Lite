@@ -45,7 +45,9 @@ ADK_INSTRUCTIONS = """
 TOOLS (ADK)
 - Before answering any integral calculus question, call search_knowledge_base with the student's question. Its
   "chunks" play the role of the "Contexto recuperado" block described in GROUNDING: answer only from them and
-  cite their "source" values in the "source" field.
+  cite their "source" values in the "source" field. If the message is a bare exercise (e.g. "∫ x·e^x dx"),
+  search for the technique or rule that applies, as a short Spanish phrase ("integración por partes"), instead
+  of the raw expression.
 - When the student states how much detail they want ("explicame con mas detalle", "solo lo basico"), call
   set_explanation_level with "basico" or "detallado".
 - After working through an exercise with the student, call log_practice_attempt with the technique used and
