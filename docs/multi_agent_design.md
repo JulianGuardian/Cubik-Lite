@@ -85,19 +85,23 @@ equivalente a la anterior. Queda como mejora posterior.
 
 ## 4. Diagrama
 
+```mermaid
+flowchart TD
+    coord["cubik_coordinator<br/><i>recibe cada mensaje<br/>set_explanation_level</i>"]
+
+    theory["theory_agent<br/><i>RAG search</i>"]
+    solver["solver_agent<br/><i>SymPy solve/check, RAG</i>"]
+    verifier["verifier_agent<br/><i>SymPy check + log, RAG</i>"]
+    progress["progress_agent<br/><i>state tools</i>"]
+
+    coord -->|sub_agents| theory
+    coord -->|sub_agents| solver
+    coord -->|sub_agents| verifier
+    coord -.->|AgentTool| progress
 ```
-                         ┌──────────────────────┐
-                         │  cubik_coordinator   │  (recibe cada mensaje + set_explanation_level)
-                         └──────────┬───────────┘
-        ┌──────────────────┬────────┴─────────┬──────────────────────┐
-   [sub_agents]       [sub_agents]       [sub_agents]           [AgentTool]
-        │                  │                  │                      │
-┌───────▼──────┐   ┌───────▼──────┐   ┌───────▼────────┐     ┌───────▼────────┐
-│ theory_agent │   │ solver_agent │   │ verifier_agent │     │ progress_agent │
-│ (RAG search) │   │ (RAG, SymPy  │   │ (SymPy check   │     │ (state tools)  │
-│              │   │  solve/check)│   │  + log, RAG)   │     │                │
-└──────────────┘   └──────────────┘   └────────────────┘     └────────────────┘
-```
+
+Las flechas continuas son handoffs (`sub_agents`); la punteada es un `AgentTool`, que le devuelve el resultado
+al coordinador en lugar de responderle al estudiante.
 
 ## 5. Cambio de tema dentro de una conversación
 
