@@ -6,7 +6,7 @@ retrieval is a tool the model calls instead of a block main.py prepends, and
 conversation history lives in ADK's SessionService instead of
 SlidingWindowManager.
 
-State scopes used by the tools (see docs/adk_agent.md):
+State scopes used by the tools (see docs/en/adk_agent.md):
 - temp:last_sources        -> only for the current turn.
 - practice_log             -> this session (conversation) only.
 - user:explanation_level   -> this student, across all of their sessions.

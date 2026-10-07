@@ -67,12 +67,12 @@ del estudiante).
 
 ## 6. Implementación
 
-- **Indexación y recuperación**: [`retriever.py`](../retriever.py) — `chunk_text()`, `ingest()`, `query()`.
-- **Integración en el chat**: [`main.py`](../main.py) — `send_message()` recupera contexto y lo antepone al
+- **Indexación y recuperación**: [`retriever.py`](../../retriever.py) — `chunk_text()`, `ingest()`, `query()`.
+- **Integración en el chat**: [`main.py`](../../main.py) — `send_message()` recupera contexto y lo antepone al
   turno actual antes de llamar al LLM, sin inflar el historial gestionado por `SlidingWindowManager`
   (ver [`context_strategy.md`](context_strategy.md)).
-- **Contrato de citación**: [`prompts/system_prompt.txt`](../prompts/system_prompt.txt), sección GROUNDING y
+- **Contrato de citación**: [`prompts/system_prompt.txt`](../../prompts/system_prompt.txt), sección GROUNDING y
   campo `"source"`.
-- **Pruebas unitarias**: [`test_retriever.py`](../tests/test_retriever.py) cubre `chunk_text()`; la indexación y
+- **Pruebas unitarias**: [`test_retriever.py`](../../tests/test_retriever.py) cubre `chunk_text()`; la indexación y
   recuperación reales (que dependen de un proveedor de embeddings activo) se verifican a mano con
   `python retriever.py` y `python main.py`.

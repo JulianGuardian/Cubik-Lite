@@ -4,7 +4,7 @@ A coordinator routes each student message to one of three specialists through
 sub_agents handoffs (theory, solver, verifier) and calls a fourth one,
 progress_agent, as an AgentTool. The specialists can't transfer, so every new
 message comes back to the coordinator. Results and verdicts come from the SymPy
-tools in math_tools.py, not from the model. See docs/multi_agent_design.md.
+tools in math_tools.py, not from the model. See docs/en/multi_agent_design.md.
 
 Instructions live in prompts/team/: shared.txt (a compact version of
 prompts/system_prompt.txt for the agents that talk to the student) plus one
@@ -43,7 +43,7 @@ PROMPTS_DIR = REPO_ROOT / "prompts" / "team"
 # so ADK sends the student's next message to the root (the coordinator) instead
 # of the specialist that answered last. Routing then lives in one agent, rather
 # than relying on each specialist to notice a topic switch and transfer, which
-# the local model often got wrong (see docs/multi_agent_design.md, section 5).
+# the local model often got wrong (see docs/en/multi_agent_design.md, section 5).
 NO_TRANSFERS = {"disallow_transfer_to_parent": True, "disallow_transfer_to_peers": True}
 
 # Low temperature for every agent in the team: routing, tool arguments and the

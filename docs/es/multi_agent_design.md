@@ -1,10 +1,10 @@
 # Diseño multiagente (Corte 2)
 
 Este documento define el equipo de agentes que reemplaza al tutor único de
-[`agents/cubik_tutor/`](../agents/cubik_tutor/agent.py) para Corte 2. Refina la propuesta de
-[PROPOSAL.md](../PROPOSAL.md) (un agente de triage más agentes que resuelven) con los patrones de la semana 8:
+[`agents/cubik_tutor/`](../../agents/cubik_tutor/agent.py) para Corte 2. Refina la propuesta de
+[PROPOSAL.md](../../PROPOSAL.md) (un agente de triage más agentes que resuelven) con los patrones de la semana 8:
 handoff con `sub_agents`, `AgentTool` y workflow agents. La implementación está en
-[`agents/cubik_team/agent.py`](../agents/cubik_team/agent.py).
+[`agents/cubik_team/agent.py`](../../agents/cubik_team/agent.py).
 
 El problema no cambia: tutoría de cálculo integral fundamentada en `data/` mediante RAG. Cambian dos cosas:
 
@@ -55,7 +55,7 @@ función `check_antiderivative` o `check_definite_integral`, que es determinista
 
 ## 3. Tools de SymPy
 
-Las de cálculo viven en [`math_tools.py`](../math_tools.py), en la raíz del repo (junto a `retriever.py`).
+Las de cálculo viven en [`math_tools.py`](../../math_tools.py), en la raíz del repo (junto a `retriever.py`).
 Reciben las expresiones como texto. Aceptan sintaxis de SymPy (`x*exp(x)`) y la notación habitual del
 estudiante: `^` para potencias, multiplicación implícita (`2x`), `e` y `ln`.
 
@@ -149,7 +149,7 @@ devuelve sus cambios (`state_delta`) al terminar. Por eso `progress_agent` puede
 
 ## 7. Prompts y formato de salida
 
-Las instrucciones viven en [`prompts/team/`](../prompts/team/):
+Las instrucciones viven en [`prompts/team/`](../../prompts/team/):
 
 - `shared.txt`: una versión compacta de `prompts/system_prompt.txt` (alcance, tono, idioma, grounding,
   preferencia de detalle y formato JSON). La comparten los agentes que hablan con el estudiante. Con el

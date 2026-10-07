@@ -2,7 +2,7 @@
 
 The agents explain and write the step-by-step reasoning, but final results and
 the verdict on a student's answer come from here, so they don't depend on what
-the model thinks. See docs/multi_agent_design.md, section 3.
+the model thinks. See docs/en/multi_agent_design.md, section 3.
 
 Expressions arrive as text. The parser accepts SymPy syntax ("x*exp(x)") and
 common student notation: "^" for powers, implicit multiplication ("2x",

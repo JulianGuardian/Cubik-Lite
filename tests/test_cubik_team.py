@@ -1,6 +1,6 @@
 """Tests for the multi-agent tree in agents/cubik_team/agent.py.
 
-They check the team's wiring against docs/multi_agent_design.md (who is a
+They check the team's wiring against docs/en/multi_agent_design.md (who is a
 sub-agent, who is an AgentTool, which tools each agent gets) and the verifier's
 check-and-log tools, without calling a model. The routing itself depends on the
 model and is verified manually with `adk web agents`.
