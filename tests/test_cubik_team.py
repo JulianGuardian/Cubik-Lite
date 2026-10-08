@@ -17,16 +17,14 @@ from google.adk.agents._agent_router import (
 )
 from google.adk.events import Event
 from google.adk.tools.agent_tool import AgentTool
+from google.adk.tools.function_tool import FunctionTool
 
 SPECIALISTS = [team.theory_agent, team.solver_agent, team.verifier_agent]
 
 
 def tool_names(agent) -> set[str]:
-    """Names of an agent's tools, whether plain functions or AgentTool wrappers."""
-    return {
-        tool.name if isinstance(tool, AgentTool) else tool.__name__
-        for tool in agent.tools
-    }
+    """Names of an agent's tools, whether plain functions or ADK tool wrappers."""
+    return {getattr(tool, "name", None) or tool.__name__ for tool in agent.tools}
 
 
 def test_root_agent_is_the_coordinator_with_three_handoff_specialists() -> None:
@@ -45,7 +43,11 @@ def test_progress_agent_is_an_agent_tool_of_the_coordinator() -> None:
 
     assert [t.agent for t in agent_tools] == [team.progress_agent]
     assert team.progress_agent not in team.root_agent.sub_agents
-    assert tool_names(team.root_agent) == {"set_explanation_level", "progress_agent"}
+    assert tool_names(team.root_agent) == {
+        "set_explanation_level",
+        "reset_practice_log",
+        "progress_agent",
+    }
 
 
 @pytest.mark.parametrize(
@@ -70,7 +72,7 @@ def test_progress_agent_is_an_agent_tool_of_the_coordinator() -> None:
                 "search_knowledge_base",
             },
         ),
-        (team.progress_agent, {"get_progress_summary", "reset_practice_log"}),
+        (team.progress_agent, {"get_progress_summary"}),
     ],
 )
 def test_each_agent_gets_only_its_tools(agent, expected: set[str]) -> None:
@@ -148,12 +150,14 @@ def test_prompts_are_loaded_from_files() -> None:
 
 def test_shared_tools_are_reused_from_cubik_tutor() -> None:
     """Verify the state and RAG tools are cubik_tutor's functions, not copies."""
-    shared = {
-        tool.__name__: tool
-        for agent in [team.root_agent, *SPECIALISTS, team.progress_agent]
-        for tool in agent.tools
-        if not isinstance(tool, AgentTool) and hasattr(tutor, tool.__name__)
-    }
+    shared = {}
+    for agent in [team.root_agent, *SPECIALISTS, team.progress_agent]:
+        for tool in agent.tools:
+            if isinstance(tool, AgentTool):
+                continue
+            function = tool.func if isinstance(tool, FunctionTool) else tool
+            if hasattr(tutor, function.__name__):
+                shared[function.__name__] = function
 
     assert set(shared) == {
         "search_knowledge_base",
@@ -162,8 +166,25 @@ def test_shared_tools_are_reused_from_cubik_tutor() -> None:
         "get_progress_summary",
         "reset_practice_log",
     }
-    for name, tool in shared.items():
-        assert tool is getattr(tutor, name)
+    for name, function in shared.items():
+        assert function is getattr(tutor, name)
+
+
+def test_coordinator_holds_the_guarded_reset_tool_directly() -> None:
+    """Verify the coordinator uses cubik_tutor's confirmation-guarded reset, not a copy."""
+    assert tutor.reset_practice_log_tool in team.root_agent.tools
+
+
+def test_no_confirmation_tool_is_hidden_inside_an_agent_tool() -> None:
+    """Verify approvals can reach the student: an AgentTool's nested run never forwards them.
+
+    A tool that needs approval inside progress_agent would be blocked for good,
+    since the student would never see the request.
+    """
+    for tool in team.root_agent.tools:
+        if isinstance(tool, AgentTool):
+            for inner in tool.agent.tools:
+                assert not getattr(inner, "_require_confirmation", False)
 
 
 @pytest.mark.parametrize("specialist", SPECIALISTS, ids=lambda a: a.name)

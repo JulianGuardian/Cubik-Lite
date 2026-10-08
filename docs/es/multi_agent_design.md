@@ -21,11 +21,11 @@ porque son el texto exacto que ADK le muestra al modelo para enrutar.
 
 | Agente | Responsabilidad | `description` | Tools |
 |---|---|---|---|
-| `cubik_coordinator` (raíz) | Recibe cada mensaje, lo enruta, rechaza lo que está fuera de alcance y guarda la preferencia de detalle. | Entry point of the integral calculus tutor: classifies each student message and routes it to the right specialist. | `set_explanation_level`, `AgentTool(progress_agent)` |
+| `cubik_coordinator` (raíz) | Recibe cada mensaje, lo enruta, rechaza lo que está fuera de alcance, guarda la preferencia de detalle y reinicia el registro de práctica con aprobación del estudiante. | Entry point of the integral calculus tutor: classifies each student message and routes it to the right specialist. | `set_explanation_level`, `reset_practice_log` (con aprobación), `AgentTool(progress_agent)` |
 | `theory_agent` | Responde preguntas conceptuales. | Explains integral calculus concepts, definitions and theorems (e.g. why +C, the Fundamental Theorem), citing the knowledge base. Does not solve or check specific exercises. | `search_knowledge_base` |
 | `solver_agent` | Resuelve un ejercicio que el estudiante trae sin respuesta. | Solves a specific integral the student asks to be solved, step by step, naming the technique and the rule behind each step. Does not answer theory questions or check the student's own answers. | `solve_integral`, `search_knowledge_base`, `check_antiderivative`, `check_definite_integral`, `log_practice_attempt` |
 | `verifier_agent` | Revisa la respuesta (o el paso a paso) que trae el estudiante. | Checks the student's own answer to a specific integral against an exact SymPy computation, and explains the mistake if it is wrong. Does not solve exercises the student has not attempted. | `check_student_antiderivative`, `check_student_definite_integral`, `search_knowledge_base` |
-| `progress_agent` | Resume el progreso o reinicia el registro de práctica. | Summarizes the student's practice progress per technique, or resets their practice log. | `get_progress_summary`, `reset_practice_log` |
+| `progress_agent` | Resume el progreso de práctica. | Summarizes the student's practice progress per technique. | `get_progress_summary` |
 
 La frontera entre `solver_agent` y `verifier_agent` es qué trae el estudiante:
 
@@ -34,7 +34,8 @@ La frontera entre `solver_agent` y `verifier_agent` es qué trae el estudiante:
   `verifier_agent`.
 
 `search_knowledge_base`, `set_explanation_level`, `log_practice_attempt`, `get_progress_summary` y
-`reset_practice_log` son las tools de `agents/cubik_tutor/agent.py`. Se importan de ahí, no se duplican. Las tools
+`reset_practice_log` son las tools de `agents/cubik_tutor/agent.py`. Se importan de ahí, no se duplican
+(`reset_practice_log` llega envuelta en `reset_practice_log_tool`, que pide aprobación antes de correr). Las tools
 de SymPy son nuevas (sección 3).
 
 ## 2. Tipo de delegación
@@ -87,12 +88,12 @@ equivalente a la anterior. Queda como mejora posterior.
 
 ```mermaid
 flowchart TD
-    coord["cubik_coordinator<br/><i>recibe cada mensaje<br/>set_explanation_level</i>"]
+    coord["cubik_coordinator<br/><i>recibe cada mensaje<br/>set_explanation_level<br/>reset_practice_log (con aprobación)</i>"]
 
     theory["theory_agent<br/><i>RAG search</i>"]
     solver["solver_agent<br/><i>SymPy solve/check, RAG</i>"]
     verifier["verifier_agent<br/><i>SymPy check + log, RAG</i>"]
-    progress["progress_agent<br/><i>state tools</i>"]
+    progress["progress_agent<br/><i>get_progress_summary</i>"]
 
     coord -->|sub_agents| theory
     coord -->|sub_agents| solver
@@ -133,7 +134,7 @@ Se mantienen los alcances de la semana 7 (ver [adk_agent.md](adk_agent.md#2-tool
 | Clave | Quién escribe | Quién lee |
 |---|---|---|
 | `user:explanation_level` | Coordinador (`set_explanation_level`) | Todos los agentes que hablan con el estudiante, en su instrucción; `progress_agent` |
-| `practice_log`, `app:total_attempts_all_users` | `verifier_agent` (automático, en `check_student_*`); `solver_agent` (`log_practice_attempt`); `progress_agent` (`reset_practice_log`) | `progress_agent` (`get_progress_summary`) |
+| `practice_log`, `app:total_attempts_all_users` | `verifier_agent` (automático, en `check_student_*`); `solver_agent` (`log_practice_attempt`); `cubik_coordinator` (`reset_practice_log`, con aprobación) | `progress_agent` (`get_progress_summary`) |
 | `temp:last_sources` | Los agentes que llaman a `search_knowledge_base` | — |
 
 Quién registra cada intento:
@@ -144,8 +145,17 @@ Quién registra cada intento:
   que el tutor de la semana 7.
 
 `AgentTool` ejecuta al sub-agente en una sesión aparte, pero copia el estado de la sesión principal al empezar y
-devuelve sus cambios (`state_delta`) al terminar. Por eso `progress_agent` puede leer y reiniciar
+devuelve sus cambios (`state_delta`) al terminar. Por eso `progress_agent` puede leer
 `practice_log` de la sesión real.
+
+### Reinicio con aprobación
+
+`reset_practice_log` borra el progreso del estudiante y no se puede deshacer, así que ADK pausa la ejecución y le
+pide aprobación antes de correrla, solo si hay intentos registrados (detalle en [adk_agent.md](adk_agent.md),
+sección 2). La tool la tiene el **coordinador** directamente y no `progress_agent`: `AgentTool` ejecuta al
+sub-agente en un `Runner` anidado cuyos eventos no llegan al cliente, solo el último contenido. Una aprobación
+pedida ahí dentro no se podría responder y el reinicio quedaría bloqueado para siempre. `progress_agent`
+conserva solo `get_progress_summary`.
 
 ## 7. Prompts y formato de salida
 

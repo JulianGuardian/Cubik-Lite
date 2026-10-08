@@ -6,6 +6,7 @@ or embedding provider is needed. The agent's real tool-calling loop is
 verified manually with `adk web agents`.
 """
 
+import asyncio
 from types import SimpleNamespace
 
 import pytest
@@ -20,7 +21,9 @@ def ctx() -> SimpleNamespace:
 
 def test_root_agent_is_adk_web_target() -> None:
     """Verify the module exposes root_agent with every tool registered."""
-    tool_names = {tool.__name__ for tool in agent.root_agent.tools}
+    tool_names = {
+        getattr(tool, "name", None) or tool.__name__ for tool in agent.root_agent.tools
+    }
     assert agent.root_agent.name == "cubik_tutor"
     assert tool_names == {
         "search_knowledge_base",
@@ -117,3 +120,118 @@ def test_reset_practice_log_keeps_user_and_app_state(ctx: SimpleNamespace) -> No
     assert ctx.state["practice_log"] == []
     assert ctx.state["user:explanation_level"] == "detallado"
     assert ctx.state["app:total_attempts_all_users"] == 2
+
+
+def test_reset_practice_log_is_guarded_by_a_confirmation_tool() -> None:
+    """Verify the root agent holds the confirmation-guarded wrapper, not the bare function."""
+    assert agent.reset_practice_log_tool.func is agent.reset_practice_log
+    assert agent.reset_practice_log_tool in agent.root_agent.tools
+    assert agent.reset_practice_log not in agent.root_agent.tools
+
+
+def test_has_practice_attempts_only_when_the_log_has_entries(
+    ctx: SimpleNamespace,
+) -> None:
+    """Verify the confirmation condition is False for a missing or empty log."""
+    assert agent.has_practice_attempts(ctx) is False
+
+    ctx.state["practice_log"] = []
+    assert agent.has_practice_attempts(ctx) is False
+
+    agent.log_practice_attempt("substitution", True, ctx)
+    assert agent.has_practice_attempts(ctx) is True
+
+
+class ConfirmationContext(SimpleNamespace):
+    """A stand-in for ToolContext that records the approvals ADK asks for."""
+
+    def __init__(self, state: dict, tool_confirmation=None) -> None:
+        super().__init__(
+            state=state,
+            tool_confirmation=tool_confirmation,
+            actions=SimpleNamespace(skip_summarization=False),
+            approvals_requested=[],
+        )
+
+    def request_confirmation(self, **kwargs) -> None:
+        self.approvals_requested.append(kwargs)
+
+
+def run_reset_tool(context: ConfirmationContext) -> dict:
+    """Run the guarded reset tool the way ADK does."""
+    return asyncio.run(
+        agent.reset_practice_log_tool.run_async(args={}, tool_context=context)
+    )
+
+
+def logged_state() -> dict:
+    """A session state with one logged attempt."""
+    return {"practice_log": [{"technique": "substitution", "solved": True}]}
+
+
+def test_reset_asks_for_approval_and_keeps_the_log_until_answered() -> None:
+    """Verify a reset with attempts logged does not run before the student answers."""
+    context = ConfirmationContext(logged_state())
+
+    result = run_reset_tool(context)
+
+    assert "requires confirmation" in result["error"]
+    assert len(context.approvals_requested) == 1
+    assert context.state["practice_log"] == logged_state()["practice_log"]
+
+
+def test_reset_runs_when_the_student_approves() -> None:
+    """Verify an approved reset clears the log."""
+    context = ConfirmationContext(
+        logged_state(), tool_confirmation=SimpleNamespace(confirmed=True)
+    )
+
+    assert run_reset_tool(context) == {"cleared_attempts": 1}
+    assert context.state["practice_log"] == []
+
+
+def test_reset_does_not_run_when_the_student_rejects() -> None:
+    """Verify a rejected reset leaves the log intact."""
+    context = ConfirmationContext(
+        logged_state(), tool_confirmation=SimpleNamespace(confirmed=False)
+    )
+
+    assert "rejected" in run_reset_tool(context)["error"]
+    assert context.state["practice_log"] == logged_state()["practice_log"]
+
+
+def test_reset_with_nothing_to_lose_skips_the_approval() -> None:
+    """Verify an empty log is reset without asking."""
+    context = ConfirmationContext({})
+
+    assert run_reset_tool(context) == {"cleared_attempts": 0}
+    assert context.approvals_requested == []
+
+
+def test_reset_approval_request_is_in_spanish_and_counts_the_attempts() -> None:
+    """Verify the student sees ADK's approval request in Spanish, not the default English hint."""
+    one = ConfirmationContext(logged_state())
+    two = ConfirmationContext(
+        {"practice_log": logged_state()["practice_log"] * 2}
+    )
+
+    run_reset_tool(one)
+    run_reset_tool(two)
+
+    hint_one = one.approvals_requested[0]["hint"]
+    hint_two = two.approvals_requested[0]["hint"]
+    assert "Se borrarán 1 intento de tu registro" in hint_one
+    assert "Se borrarán 2 intentos de tu registro" in hint_two
+    assert "Confirmed" in hint_one and "yes" in hint_one
+    assert "Please approve or reject" not in hint_one
+
+
+def test_reset_hint_is_only_requested_once_per_pending_approval() -> None:
+    """Verify an answered approval goes through ADK's own path and does not ask again."""
+    context = ConfirmationContext(
+        logged_state(), tool_confirmation=SimpleNamespace(confirmed=True)
+    )
+
+    run_reset_tool(context)
+
+    assert context.approvals_requested == []

@@ -14,7 +14,7 @@ La documentación técnica está en español en [`docs/es/`](docs/es/) y en ingl
 | Pieza | Archivo | Qué hace |
 |---|---|---|
 | Chat | [`main.py`](main.py) | Loop interactivo de terminal. |
-| Agente ADK | [`agents/cubik_tutor/agent.py`](agents/cubik_tutor/agent.py) | El mismo tutor como agente de Google ADK: el RAG es una tool y guarda preferencias y progreso en el estado de sesión. Ver [docs/es/adk_agent.md](docs/es/adk_agent.md). |
+| Agente ADK | [`agents/cubik_tutor/agent.py`](agents/cubik_tutor/agent.py) | El mismo tutor como agente de Google ADK: el RAG es una tool y guarda preferencias y progreso en el estado de sesión. El reinicio del progreso pide aprobación del estudiante. Ver [docs/es/adk_agent.md](docs/es/adk_agent.md). |
 | Equipo multiagente | [`agents/cubik_team/agent.py`](agents/cubik_team/agent.py) | Versión de Corte 2: un coordinador enruta cada mensaje a un especialista de teoría, de resolución o de verificación, y consulta el progreso como `AgentTool`. Ver [docs/es/multi_agent_design.md](docs/es/multi_agent_design.md). |
 | Cálculo exacto | [`math_tools.py`](math_tools.py) | Resuelve integrales y comprueba respuestas con SymPy, para que el resultado y el veredicto no dependan del modelo. |
 | Selección de modelo | [`llm_client.py`](llm_client.py) | Gemini si hay `GEMINI_API_KEY`, si no un modelo local vía Ollama. |
