@@ -17,9 +17,13 @@ del estudiante).
    con `overlap` caracteres compartidos entre fragmentos consecutivos, tras normalizar espacios en blanco.
 2. **Indexación persistente**: cada chunk se embebe con `llm_client.embed()` y se guarda en una colección de
    ChromaDB persistida en `chroma_db/`, junto con metadata `source` (la ruta relativa del archivo de origen).
-3. **Recuperación por similitud**: ante cada pregunta, se embebe la pregunta y se consultan los `n_results`
-   chunks más similares de la colección.
-4. **Respuesta fundamentada**: los chunks recuperados (con su fuente) se anteponen a la pregunta del estudiante
+3. **Recuperación por similitud**: ante cada pregunta, se embebe la pregunta y se consultan los
+   `RERANK_CANDIDATES` chunks más similares de la colección (`n_results` si el re-ranking está apagado).
+4. **Re-ranking con LLM**: una llamada al modelo de chat puntúa cada candidato de 0 a 10 frente a la pregunta y
+   se conservan los `n_results` mejores (los empates mantienen el orden de la búsqueda vectorial). Si la
+   llamada falla o su respuesta no se puede leer, se conserva el orden de la búsqueda vectorial, así que la
+   recuperación nunca se rompe.
+5. **Respuesta fundamentada**: los chunks recuperados (con su fuente) se anteponen a la pregunta del estudiante
    antes de enviarla al LLM; el system prompt instruye a responder solo con base en ese contexto y a citar la
    fuente en el campo `"source"` de la respuesta.
 
@@ -37,8 +41,16 @@ del estudiante).
 - **`n_results=5`**: con `chunk_size=600`/`overlap=100` sobre ~24k caracteres, cada archivo produce en promedio
   ~5 chunks. Un `n_results` más bajo (p. ej. 3) arriesga no cubrir un tema completo de un solo archivo, y las
   preguntas que combinan información de dos chunks o dos archivos relacionados (p. ej. una técnica de
-  integración aplicada a un problema de área) necesitan ese margen. Con un corpus tan pequeño, 5 resultados no
-  meten ruido significativo.
+  integración aplicada a un problema de área) necesitan ese margen.
+- **Re-ranking sobre la búsqueda vectorial**: los embeddings devuelven chunks "parecidos", no necesariamente los
+  más útiles. Para "¿cuál es la integral de 2x dx?", tres de los cinco resultados vectoriales no tenían relación
+  (integración por partes de `ln(x)`, una sustitución con radical, el Teorema Fundamental). Traer 15 candidatos
+  y dejar que el modelo elija los 5 mejores sube las reglas que sí responden y descarta buena parte de ese
+  ruido. No es una verificación de corrección: los resultados y veredictos siguen viniendo de SymPy
+  (`math_tools.py`).
+- **Por qué un LLM y no un cross-encoder**: el proyecto ya llama al modelo de chat con `litellm` (Gemini u
+  Ollama), así que el re-ranking no agrega dependencias y funciona con cualquiera de los dos proveedores. Un
+  cross-encoder exige `sentence-transformers` y `torch`, pesado para 54 chunks.
 
 ---
 
@@ -50,7 +62,9 @@ del estudiante).
 | **Chunking sin overlap** | `overlap=0`. | Menos chunks, menos almacenamiento. | Mayor riesgo de cortar una fórmula o una explicación a la mitad. | **Descartada**: el corpus es denso en LaTeX. |
 | **FAISS en vez de ChromaDB** | Índice vectorial en memoria/archivo plano. | Muy rápido, dependencia ligera. | Sin persistencia ni metadata de fuente integradas; hay que construirlas a mano. | **Descartada**: ChromaDB ya resuelve ambas. |
 | **`n_results` bajo (2-3)** | Recuperar menos chunks por pregunta. | Contexto más corto, respuestas más enfocadas. | Puede no cubrir preguntas que requieren dos chunks o dos archivos relacionados. | **Descartada**: insuficiente para el caso de preguntas que combinan fuentes. |
-| **Chunking de tamaño fijo + ChromaDB, `n_results=5`** | Ver sección 2. | Simple, determinista, cubre temas completos y preguntas cruzadas, persistente. | No es tan preciso como un chunking semántico en corpus más grandes. | **Seleccionada**. |
+| **Re-ranking con cross-encoder** | Un modelo local (p. ej. `sentence-transformers`) puntúa cada par (pregunta, chunk). | Determinista, sin llamada extra al modelo por consulta. | Agrega `sentence-transformers` y `torch`; un modelo más que descargar y correr. | **Descartada**: demasiado pesada para un corpus de 54 chunks. |
+| **Sin re-ranking** | Usar el orden de la búsqueda vectorial tal cual. | Sin llamada extra, determinista. | Chunks sin relación llegan al modelo y a la regla de los agentes de "responder solo desde los chunks". | **Descartada**: ruido observado en el top 5. |
+| **Chunking de tamaño fijo + ChromaDB, `n_results=5`, re-ranking con LLM de 15 candidatos** | Ver sección 2. | Simple, cubre temas completos y preguntas cruzadas, persistente, mejor top 5. | Una llamada más al modelo por recuperación (latencia y costo); los puntajes del LLM no son del todo deterministas. | **Seleccionada**. |
 
 ---
 
@@ -60,19 +74,35 @@ del estudiante).
 |---|---|---|---|
 | `chunk_size` | `int` | `600` | Caracteres máximos por chunk. |
 | `overlap` | `int` | `100` | Caracteres compartidos entre chunks consecutivos. |
-| `n_results` | `int` | `5` | Chunks recuperados por pregunta. |
+| `n_results` | `int` | `5` | Chunks devueltos por pregunta (después del re-ranking). |
+| `RERANK_CANDIDATES` | `int` (variable de entorno) | `15` | Chunks que trae la búsqueda vectorial para que el re-ranker elija entre ellos. |
+| `RERANK_ENABLED` | `bool` (variable de entorno) | `1` | `0`/`false`/`no`/`off` omite el re-ranking y devuelve los `n_results` primeros de la búsqueda vectorial. |
 | Modelo de embeddings | `str` | `gemini/gemini-embedding-001` (Gemini) o `ollama/nomic-embed-text` (local) | Seleccionado automáticamente por `llm_client.py` según haya o no `GEMINI_API_KEY`. |
 
 ---
 
 ## 6. Implementación
 
-- **Indexación y recuperación**: [`retriever.py`](../../retriever.py) — `chunk_text()`, `ingest()`, `query()`.
+- **Indexación y recuperación**: [`retriever.py`](../../retriever.py) — `chunk_text()`, `ingest()`, `query()` y
+  los helpers de re-ranking `rerank()` y `_parse_scores()`. Todos los consumidores pasan por `query()`:
+  `main.py` y la tool `search_knowledge_base` que comparten `cubik_tutor` y los agentes de teoría, resolución
+  y verificación del equipo, así que ninguno cambió.
 - **Integración en el chat**: [`main.py`](../../main.py) — `send_message()` recupera contexto y lo antepone al
   turno actual antes de llamar al LLM, sin inflar el historial gestionado por `SlidingWindowManager`
   (ver [`context_strategy.md`](context_strategy.md)).
 - **Contrato de citación**: [`prompts/system_prompt.txt`](../../prompts/system_prompt.txt), sección GROUNDING y
   campo `"source"`.
-- **Pruebas unitarias**: [`test_retriever.py`](../../tests/test_retriever.py) cubre `chunk_text()`; la indexación y
-  recuperación reales (que dependen de un proveedor de embeddings activo) se verifican a mano con
-  `python retriever.py` y `python main.py`.
+- **Pruebas unitarias**: [`test_retriever.py`](../../tests/test_retriever.py) cubre `chunk_text()` y el
+  re-ranking (lectura de puntajes, orden, fallbacks, cantidad de candidatos) con la llamada al modelo y Chroma
+  simulados; la indexación y recuperación reales (que dependen de un proveedor de embeddings activo) se
+  verifican a mano con `python retriever.py` y `python main.py`.
+
+### Notas de probarlo con Gemini
+- Los puntajes del modelo varían un poco entre corridas, incluso con `temperature=0`, así que el orden exacto de
+  los chunks más débiles (posiciones 4-5) puede cambiar. Los tres mejores fueron los mismos en todas las
+  corridas para la pregunta de ejemplo de arriba.
+- Gemini a veces responde 503 bajo carga; entonces el fallback devuelve el orden vectorial y registra una
+  advertencia.
+- Los prompts del solver y del verifier piden buscar con una frase corta en español que nombre la técnica
+  ("integración por partes") en vez de sintaxis SymPy como `x*exp(x)`, que es una mala consulta tanto para los
+  embeddings como para el re-ranker.

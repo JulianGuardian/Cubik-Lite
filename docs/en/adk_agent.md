@@ -27,11 +27,43 @@ not exposed to the model.
 | `log_practice_attempt` | `practice_log` | Session | The practice log belongs to this conversation; a new session starts from scratch. |
 | `log_practice_attempt` | `app:total_attempts_all_users` | App (all users) | It is a global counter for the tutor, shared by everyone. |
 | `get_progress_summary` | reads the ones above | — | Read-only. |
-| `reset_practice_log` | `practice_log` | Session | Clears only the session; it does not touch `user:` or `app:`. |
+| `reset_practice_log` | `practice_log` | Session | Clears only the session; it does not touch `user:` or `app:`. Asks for approval if attempts are logged. |
 
 The agent's instruction injects `{user:explanation_level?}` to adjust the level of detail in the `steps`. The `?`
 makes the variable optional: if the student has not chosen a level yet, it is replaced with an empty value instead
 of failing.
+
+### Approval before resetting the practice
+
+`reset_practice_log` erases the session's practice log and cannot be undone, so it is the tool with an interrupt
+point (*human-in-the-loop*): ADK pauses the run and asks the student to approve before running it.
+
+- **How:** `agent.py` wraps it in `SpanishConfirmationTool` (`reset_practice_log_tool`), a minimal subclass of
+  `FunctionTool` with `require_confirmation=has_practice_attempts`. `has_practice_attempts` reads `practice_log`
+  from the state, so **approval is only requested when there is something to lose**; with an empty log it runs
+  without asking. ADK calls the condition with the same arguments as the tool, which is why its parameter is named
+  `tool_context`.
+- **Message in Spanish:** ADK writes the request text in English inside `FunctionTool.run_async` and has no option
+  to change it. `SpanishConfirmationTool` only replaces that first step, asking for approval with
+  `tool_context.request_confirmation(hint=...)`, and the rest (approved, rejected, run) is still done by
+  `super().run_async`. `reset_confirmation_hint` builds the text with the number of attempts that would be erased.
+- **What happens:** the first call does not run the function. ADK emits an `adk_request_confirmation` event and
+  the model receives `This tool call requires confirmation`. The client answers `confirmed: true` or `false`. If
+  approved, the tool runs; if rejected, it returns `This tool call is rejected.` and the log stays intact.
+- **Prompt:** the instruction tells the model to call the tool right away and not to ask for confirmation in its
+  own message. If it does, the "approval" is handled by the model's text and not by ADK's mechanism.
+- **Multi-agent team:** the `cubik_team` coordinator holds this same tool directly; see
+  [multi_agent_design.md](multi_agent_design.md), section 6.
+- **How to try it:** `adk run agents/cubik_tutor` (or `agents/cubik_team`). Send "Verifica mi respuesta: la
+  integral de x^2 dx es x^3/3 + C" to log an attempt, then "quiero empezar mi práctica de nuevo". The terminal
+  shows `[HITL confirm]` and waits for `yes`; any other answer rejects. In `adk web` it appears as an
+  `adk_request_confirmation` card with a "Confirmed" checkbox and a "Submit" button.
+- **Limitations:** only the message is in Spanish. The web UI labels ("Confirmed", "Submit", "Payload") and the
+  CLI's `Type "yes" to confirm` line belong to ADK and cannot be changed from the agent, which is why the message
+  names those buttons. Tool confirmation is marked experimental in ADK 2.9.
+
+`tests/test_adk_tools.py` covers the condition and the four cases (empty log, approval pending, approved and
+rejected) with a simulated context.
 
 ## 3. How to run it
 

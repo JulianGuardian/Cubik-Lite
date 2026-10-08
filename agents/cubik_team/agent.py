@@ -27,7 +27,7 @@ from agents.cubik_tutor.agent import (
     MODEL,
     get_progress_summary,
     log_practice_attempt,
-    reset_practice_log,
+    reset_practice_log_tool,
     search_knowledge_base,
     set_explanation_level,
 )
@@ -181,11 +181,9 @@ progress_agent = Agent(
     name="progress_agent",
     model=MODEL,
     generate_content_config=GENERATION_CONFIG,
-    description=(
-        "Summarizes the student's practice progress per technique, or resets their practice log."
-    ),
+    description="Summarizes the student's practice progress per technique.",
     instruction=load_prompt("progress"),
-    tools=[get_progress_summary, reset_practice_log],
+    tools=[get_progress_summary],
 )
 
 root_agent = Agent(
@@ -198,5 +196,11 @@ root_agent = Agent(
     ),
     instruction=student_facing_instruction("coordinator"),
     sub_agents=[theory_agent, solver_agent, verifier_agent],
-    tools=[set_explanation_level, AgentTool(agent=progress_agent)],
+    # reset_practice_log_tool asks the student to approve before it runs. The coordinator holds it
+    # directly, not progress_agent: events of an AgentTool's nested run never reach the student.
+    tools=[
+        set_explanation_level,
+        reset_practice_log_tool,
+        AgentTool(agent=progress_agent),
+    ],
 )

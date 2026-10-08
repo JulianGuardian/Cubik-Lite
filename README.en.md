@@ -15,12 +15,12 @@ technical documentation is in English in [`docs/en/`](docs/en/) and in Spanish i
 | Component | File | What it does |
 |---|---|---|
 | Chat | [`main.py`](main.py) | Interactive terminal loop. |
-| ADK agent | [`agents/cubik_tutor/agent.py`](agents/cubik_tutor/agent.py) | The same tutor as a Google ADK agent: RAG is a tool, and it stores preferences and progress in session state. See [docs/en/adk_agent.md](docs/en/adk_agent.md). |
+| ADK agent | [`agents/cubik_tutor/agent.py`](agents/cubik_tutor/agent.py) | The same tutor as a Google ADK agent: RAG is a tool, and it stores preferences and progress in session state. Resetting progress asks the student for approval. See [docs/en/adk_agent.md](docs/en/adk_agent.md). |
 | Multi-agent team | [`agents/cubik_team/agent.py`](agents/cubik_team/agent.py) | Corte 2 version: a coordinator routes each message to a theory, solver or verifier specialist, and asks for progress through an `AgentTool`. See [docs/en/multi_agent_design.md](docs/en/multi_agent_design.md). |
 | Exact math | [`math_tools.py`](math_tools.py) | Solves integrals and checks answers with SymPy, so the result and the verdict don't depend on the model. |
 | Model selection | [`llm_client.py`](llm_client.py) | Gemini if `GEMINI_API_KEY` is set, otherwise a local model through Ollama. |
 | Conversation context | [`context_manager.py`](context_manager.py) | Sliding window of turns + character budget. See [docs/en/context_strategy.md](docs/en/context_strategy.md). |
-| RAG | [`retriever.py`](retriever.py) | Indexes `data/` in ChromaDB and retrieves the most relevant chunks for each question. See [docs/en/rag_strategy.md](docs/en/rag_strategy.md). |
+| RAG | [`retriever.py`](retriever.py) | Indexes `data/` in ChromaDB, retrieves candidate chunks for each question and re-ranks them with the chat model to keep the best ones. See [docs/en/rag_strategy.md](docs/en/rag_strategy.md). |
 | System prompt | [`prompts/system_prompt.txt`](prompts/system_prompt.txt) | Role, scope, refusal rules and JSON output format. |
 | Team prompts | [`prompts/team/`](prompts/team/) | Shared rules (`shared.txt`) and the role of each agent in the multi-agent team. |
 | Knowledge base | [`data/`](data/README.md) | Integration rules, techniques and applications, in Markdown. |
@@ -82,7 +82,7 @@ technical documentation is in English in [`docs/en/`](docs/en/) and in Spanish i
 pytest tests/
 ```
 
-They cover the context manager (`context_manager.py`), RAG chunking (`retriever.py`), the ADK agent's tools
+They cover the context manager (`context_manager.py`), RAG chunking and re-ranking (`retriever.py`), the ADK agent's tools
 (`agents/cubik_tutor/agent.py`), the SymPy tools (`math_tools.py`) and the structure of the multi-agent team
 (`agents/cubik_team/agent.py`). Real indexing and retrieval, which depend on an active embedding provider (Gemini
 or Ollama), and the team's routing, which depends on the model, are checked by hand by running

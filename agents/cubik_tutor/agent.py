@@ -27,6 +27,7 @@ import retriever
 from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools import ToolContext
+from google.adk.tools.function_tool import FunctionTool
 from llm_client import CHAT_MODEL, USING_GEMINI
 
 EXPLANATION_LEVELS = ("basico", "detallado")
@@ -45,13 +46,16 @@ ADK_INSTRUCTIONS = """
 TOOLS (ADK)
 - Before answering any integral calculus question, call search_knowledge_base with the student's question. Its
   "chunks" play the role of the "Contexto recuperado" block described in GROUNDING: answer only from them and
-  cite their "source" values in the "source" field.
+  cite their "source" values in the "source" field. If the message is a bare exercise (e.g. "∫ x·e^x dx"),
+  search for the technique or rule that applies, as a short Spanish phrase ("integración por partes"), instead
+  of the raw expression.
 - When the student states how much detail they want ("explicame con mas detalle", "solo lo basico"), call
   set_explanation_level with "basico" or "detallado".
 - After working through an exercise with the student, call log_practice_attempt with the technique used and
   whether the student solved it.
 - When the student asks how they are doing, call get_progress_summary. When they ask to start their practice
-  over, call reset_practice_log.
+  over, call reset_practice_log right away. Do not ask them to confirm in your own message: the system asks
+  them to approve before the tool runs. If the tool reports it was rejected, tell them their log was kept.
 - Out-of-scope questions are refused as described in REFUSAL BEHAVIOR, without calling search_knowledge_base.
 
 STUDENT PREFERENCES
@@ -162,6 +166,75 @@ def reset_practice_log(tool_context: ToolContext) -> dict:
     return {"cleared_attempts": cleared}
 
 
+def has_practice_attempts(tool_context: ToolContext) -> bool:
+    """Whether this session's practice log has anything a reset would erase.
+
+    It is reset_practice_log's require_confirmation condition. ADK calls it with
+    the tool's own arguments, so its parameter must be named tool_context too.
+
+    Args:
+        tool_context: Injected by ADK; gives access to session state.
+
+    Returns:
+        True if at least one attempt is logged.
+    """
+    return bool(tool_context.state.get("practice_log"))
+
+
+def reset_confirmation_hint(tool_context: ToolContext) -> str:
+    """The text the student sees when asked to approve a practice reset (in Spanish).
+
+    Args:
+        tool_context: Injected by ADK; gives access to session state.
+
+    Returns:
+        A message that says how many attempts would be erased and how to answer.
+    """
+    attempts = len(tool_context.state.get("practice_log", []))
+    noun = "intento" if attempts == 1 else "intentos"
+    return (
+        f"Se borrarán {attempts} {noun} de tu registro de práctica y no se puede deshacer. "
+        "Para aprobar, marca «Confirmed» y pulsa «Submit» en la web, o escribe yes en la terminal. "
+        "Cualquier otra respuesta cancela el reinicio."
+    )
+
+
+class SpanishConfirmationTool(FunctionTool):
+    """A FunctionTool that asks for approval with its own message instead of ADK's English one.
+
+    ADK hardcodes the approval request's hint in FunctionTool.run_async, with no
+    option to change it. This only replaces the first step, the request itself;
+    the approved, rejected and run steps are still ADK's (super().run_async).
+    """
+
+    def __init__(self, func, *, require_confirmation, hint) -> None:
+        super().__init__(func, require_confirmation=require_confirmation)
+        self._hint = hint
+
+    async def run_async(self, *, args, tool_context):
+        if not tool_context.tool_confirmation and await self.check_require_confirmation(
+            args, tool_context
+        ):
+            tool_context.request_confirmation(hint=self._hint(tool_context))
+            tool_context.actions.skip_summarization = True
+            return {
+                "error": "This tool call requires confirmation, please approve or reject."
+            }
+        return await super().run_async(args=args, tool_context=tool_context)
+
+
+# Resetting erases the student's progress with no undo, so ADK pauses the run and
+# asks the student to approve it first (only when there is something to lose).
+# cubik_team gives this same tool to its coordinator rather than to progress_agent:
+# an AgentTool runs a nested Runner whose events never reach the student, so an
+# approval requested inside it could not be answered.
+reset_practice_log_tool = SpanishConfirmationTool(
+    reset_practice_log,
+    require_confirmation=has_practice_attempts,
+    hint=reset_confirmation_hint,
+)
+
+
 root_agent = Agent(
     name="cubik_tutor",
     model=MODEL,
@@ -175,6 +248,6 @@ root_agent = Agent(
         set_explanation_level,
         log_practice_attempt,
         get_progress_summary,
-        reset_practice_log,
+        reset_practice_log_tool,
     ],
 )

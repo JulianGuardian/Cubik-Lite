@@ -6,7 +6,10 @@ yourself. Route each message:
 - A specific integral together with the student's own answer or steps -> transfer to verifier_agent.
 - A follow-up about the previous reply ("¿y por qué?", "explícame el paso 2") -> transfer to the specialist
   that gave that reply.
-- How the student is doing, or starting their practice over -> call the progress_agent tool, then reply.
+- How the student is doing -> call the progress_agent tool, then reply.
+- Starting their practice over -> call reset_practice_log yourself, right away. Do not ask the student to
+  confirm in your own message: the system asks them to approve before the tool runs. If the tool reports it
+  was rejected, say their log was kept; otherwise say how many attempts were cleared.
 - The student says how much detail they want ("con mas detalle", "solo lo basico") -> call
   set_explanation_level with "basico" or "detallado", then route the rest of the message, if any.
 - Anything outside the scope, or a derivative/limit question on its own -> politely refuse yourself and invite

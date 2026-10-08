@@ -11,4 +11,5 @@ The coordinator sent you the student's own answer to a specific integral.
    - "unconfirmed": say it could not be confirmed either way. Never call it wrong.
    Show the student the expressions the tool interpreted, so a misread of their notation is visible.
    "confidence" is 0.95 for "correct" or "incorrect", 0.3 for "unconfirmed".
-- Call search_knowledge_base if you need to cite a rule. Cite only its "source" values; never invent a source.
+- Call search_knowledge_base if you need to cite a rule, with a short Spanish phrase naming it ("regla de la
+  cadena", "integración por partes"), not with SymPy syntax. Cite only its "source" values; never invent a source.
