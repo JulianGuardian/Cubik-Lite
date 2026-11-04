@@ -1,0 +1,173 @@
+{
+  "judge_model": "gemini-flash-latest",
+  "cases": [
+    {
+      "case_id": "theory_constant_c",
+      "question": "¿Por qué siempre sumamos la constante +C al calcular una integral indefinida?",
+      "in_scope": true,
+      "passed": true,
+      "problems": [],
+      "tools_called": [
+        "transfer_to_agent",
+        "search_knowledge_base"
+      ],
+      "retrieved_sources": [
+        "indefinite_integrals/antiderivatives.md",
+        "indefinite_integrals/basic_rules.md"
+      ],
+      "answer": {
+        "answer": "Sumamos la constante de integración C porque la derivada de cualquier constante es igual a cero (d/dx(C) = 0).\n\nDado que la integración indefinida es la operación inversa de la derivación, si F(x) es una antiderivada de f(x) tal que F'(x) = f(x), entonces cualquier función de la forma F(x) + C también cumple que d/dx(F(x) + C) = F'(x) + 0 = f(x).\n\nPor esta razón, la integral indefinida no devuelve una única función, sino la familia completa de todas las antiderivadas posibles de f(x), lo cual se expresa agregando la constante arbitraria C.",
+        "steps": [
+          "Recordar que la derivada de una constante respecto a x es cero: d/dx(C) = 0.",
+          "Verificar que al derivar F(x) + C se recupera la función integrando: d/dx(F(x) + C) = F'(x) + 0 = f(x).",
+          "Concluir que la integral indefinida representa a toda la familia de antiderivadas, por lo que se debe incluir la constante arbitraria C."
+        ],
+        "rule": null,
+        "confidence": 1.0,
+        "source": [
+          "indefinite_integrals/basic_rules.md",
+          "indefinite_integrals/antiderivatives.md"
+        ]
+      },
+      "verdict": {
+        "faithfulness": 5,
+        "relevance": 5,
+        "declined": false,
+        "unsupported_claims": [],
+        "rationale": "The explanation directly answers why the constant C is added and is completely supported by the retrieved passages, which state that indefinite integration is the inverse of differentiation, d/dx(F(x)+C) = F'(x)+0 = f(x), and that the result represents the family of all antiderivatives."
+      }
+    },
+    {
+      "case_id": "theory_substitution_vs_parts",
+      "question": "¿Cuándo conviene usar sustitución en lugar de integración por partes?",
+      "in_scope": true,
+      "passed": true,
+      "problems": [],
+      "tools_called": [
+        "transfer_to_agent",
+        "search_knowledge_base"
+      ],
+      "retrieved_sources": [
+        "techniques/integration_by_parts.md",
+        "techniques/substitution.md"
+      ],
+      "answer": {
+        "answer": "Conviene usar el método de sustitución en lugar de integración por partes cuando dentro del integrando puedes identificar una función interna u = g(x) de modo que su derivada g'(x) (o un múltiplo constante de ella) también se encuentre multiplicando en el integrando.\n\nLa razón fundamental radica en la regla de origen de cada método:\n- Sustitución es el equivalente a la regla de la cadena en derivación.\n- Integración por partes es la contraparte de la regla del producto, y se usa principalmente cuando el integrando es el producto de dos funciones de distinta naturaleza (como funciones algebraicas, exponenciales, logarítmicas o trigonométricas) donde una no representa la derivada de la función interna de la otra.",
+        "steps": [
+          "Observa la estructura del integrando: busca si hay una función compuesta de la forma f(g(x)).",
+          "Calcula mentalmente la derivada de la función interna g(x). Si esa derivada g'(x) ya está presente multiplicando en el integrando (salvo por una constante), usa Sustitución.",
+          "Si el integrando es el producto de dos funciones de distinta naturaleza y la derivada de una no está presente en la otra, usa Integración por Partes."
+        ],
+        "rule": null,
+        "confidence": 1.0,
+        "source": [
+          "techniques/substitution.md",
+          "techniques/integration_by_parts.md"
+        ]
+      },
+      "verdict": {
+        "faithfulness": 5,
+        "relevance": 5,
+        "declined": false,
+        "unsupported_claims": [],
+        "rationale": "The answer accurately compares both methods using solely the provided passages, contrasting the chain rule/derivative presence for substitution against the product rule/different nature of functions for integration by parts."
+      }
+    },
+    {
+      "case_id": "applications_area_between_curves",
+      "question": "¿Cómo se calcula el área entre dos curvas usando integrales definidas?",
+      "in_scope": true,
+      "passed": true,
+      "problems": [],
+      "tools_called": [
+        "transfer_to_agent",
+        "search_knowledge_base"
+      ],
+      "retrieved_sources": [
+        "applications/area_between_curves.md",
+        "applications/area_under_curve.md"
+      ],
+      "answer": {
+        "answer": "El área comprendida entre dos curvas en un intervalo [a, b] se calcula generalizando el concepto de área bajo una curva. Si f(x) y g(x) son funciones continuas con f(x) >= g(x) en todo el intervalo [a, b], el área A es la integral definida de la diferencia entre la función superior y la inferior: A = ∫_a^b (f(x) - g(x)) dx = ∫_a^b (y_superior - y_inferior) dx. Si las fronteras se describen más fácilmente respecto al eje y (x = f(y) y x = g(y)), el área se calcula como A = ∫_c^d (f(y) - g(y)) dy = ∫_c^d (x_derecha - x_izquierda) dy.",
+        "steps": [
+          "Puntos de intersección: Resolver la ecuación f(x) = g(x) para hallar los límites de integración a y b.",
+          "Punto de prueba: Evaluar un valor de prueba x0 dentro del intervalo (a, b) en ambas funciones para identificar cuál es la curva superior y cuál la inferior.",
+          "Plantear la integral: Escribir la integral A = ∫_a^b (y_superior - y_inferior) dx.",
+          "Integrar y evaluar: Calcular la integral definida aplicando el teorema fundamental del cálculo en los límites a y b."
+        ],
+        "rule": "Área entre curvas",
+        "confidence": 1.0,
+        "source": [
+          "applications/area_between_curves.md"
+        ]
+      },
+      "verdict": {
+        "faithfulness": 5,
+        "relevance": 5,
+        "declined": false,
+        "unsupported_claims": [],
+        "rationale": "The assistant accurately explains how to calculate the area between two curves with respect to both x and y using the provided evidence, correctly detailing the steps to find intersection points and identify the upper/lower curves."
+      }
+    },
+    {
+      "case_id": "solver_power_rule",
+      "question": "Resuelve la integral de x^2 dx",
+      "in_scope": true,
+      "passed": true,
+      "problems": [],
+      "tools_called": [
+        "transfer_to_agent",
+        "solve_integral",
+        "search_knowledge_base"
+      ],
+      "retrieved_sources": [
+        "indefinite_integrals/antiderivatives.md",
+        "indefinite_integrals/basic_rules.md"
+      ],
+      "answer": {
+        "answer": "x^3/3 + C",
+        "steps": [
+          "Identificar que la función x^2 es una potencia de la forma x^n con n = 2.",
+          "Aplicar la regla de la potencia: sumar 1 al exponente (2 + 1 = 3) y dividir la expresión entre el nuevo exponente (3), obteniendo x^3/3.",
+          "Agregar la constante de integración C al resultado final para obtener x^3/3 + C."
+        ],
+        "rule": "Regla de la potencia",
+        "confidence": 0.95,
+        "source": [
+          "indefinite_integrals/basic_rules.md",
+          "indefinite_integrals/antiderivatives.md"
+        ]
+      },
+      "verdict": {
+        "faithfulness": 5,
+        "relevance": 5,
+        "declined": false,
+        "unsupported_claims": [],
+        "rationale": "The assistant accurately computes the integral using the power rule provided in the retrieved passages and tool output. All claims and steps are directly supported by the evidence."
+      }
+    },
+    {
+      "case_id": "out_of_scope_capital",
+      "question": "¿Cuál es la capital de Francia?",
+      "in_scope": false,
+      "passed": true,
+      "problems": [],
+      "tools_called": [],
+      "retrieved_sources": [],
+      "answer": {
+        "answer": "¡Hola! Mi área de especialidad es el cálculo integral. No puedo ayudarte con preguntas de cultura general como la capital de Francia, pero con mucho gusto te ayudo si tienes alguna duda, ejercicio o concepto sobre integrales que quieras consultar. ¡Dime en qué te puedo colaborar!",
+        "steps": [],
+        "rule": null,
+        "confidence": 1.0,
+        "source": null
+      },
+      "verdict": {
+        "faithfulness": 5,
+        "relevance": 1,
+        "declined": true,
+        "unsupported_claims": [],
+        "rationale": "The assistant appropriately declines to answer an out-of-scope general knowledge question and redirects to integral calculus."
+      }
+    }
+  ]
+}

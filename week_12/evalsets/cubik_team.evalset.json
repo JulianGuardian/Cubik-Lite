@@ -1,0 +1,263 @@
+{
+  "eval_set_id": "cubik_team_eval_v1",
+  "name": "Cubik-Lite cubik_team eval cases (Corte 2/3 project, Activity 4)",
+  "description": "5 eval cases against the real cubik_coordinator multi-agent team from proyecto_ai_agentic/agents/cubik_team. Expected tool_uses list only the calls the prompts REQUIRE, in the order they must happen (matched IN_ORDER, extra calls allowed, args ignored -- see cubik_team_config.json). Multi-tool trajectories: solver (handoff + solve_integral + search_knowledge_base), coordinator (set_explanation_level + progress_agent AgentTool in one turn), and a two-turn conversation (verifier logs an attempt, then the progress is read back).",
+  "eval_cases": [
+    {
+      "eval_id": "theory_constant_of_integration",
+      "conversation": [
+        {
+          "invocation_id": "inv-1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "¿Por qué siempre sumamos la constante +C al calcular una integral indefinida?"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "{\"answer\": \"Sumamos la constante +C porque la integral indefinida representa la familia de todas las antiderivadas de una función. La derivada de cualquier constante es cero, así que F(x) + C también es una antiderivada válida de f(x).\", \"steps\": [\"Una antiderivada F(x) cumple que F'(x) = f(x).\", \"La derivada de una constante C es 0, por lo que F(x) + C tiene la misma derivada f(x).\", \"Existen infinitas funciones que difieren solo por una constante, y +C las representa a todas.\"], \"rule\": \"Definición de antiderivada e integral indefinida\", \"confidence\": 1.0, \"source\": [\"indefinite_integrals/antiderivatives.md\"]}"
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "transfer_to_agent",
+                "args": {
+                  "agent_name": "theory_agent"
+                }
+              },
+              {
+                "name": "search_knowledge_base"
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "cubik_team",
+        "user_id": "student_theory_constant_of_integration",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "solver_power_rule_multi_tool",
+      "conversation": [
+        {
+          "invocation_id": "inv-2",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Resuelve la integral de x^2 dx"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "{\"answer\": \"x^3/3 + C\", \"steps\": [\"Identificamos el integrando x^2 como una potencia x^n con n = 2.\", \"Aplicamos la regla de la potencia: ∫ x^n dx = x^(n+1)/(n+1) + C para n ≠ -1.\", \"Sumamos 1 al exponente (2 + 1 = 3) y dividimos entre 3, obteniendo x^3/3 + C.\"], \"rule\": \"Regla de la potencia\", \"confidence\": 0.95, \"source\": [\"indefinite_integrals/basic_rules.md\"]}"
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "transfer_to_agent",
+                "args": {
+                  "agent_name": "solver_agent"
+                }
+              },
+              {
+                "name": "solve_integral",
+                "args": {
+                  "integrand": "x**2"
+                }
+              },
+              {
+                "name": "search_knowledge_base"
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "cubik_team",
+        "user_id": "student_solver_power_rule_multi_tool",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "verifier_correct_answer",
+      "conversation": [
+        {
+          "invocation_id": "inv-3",
+          "user_content": {
+            "parts": [
+              {
+                "text": "La integral de 2x dx es x^2 + C, verifica si esta bien"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "{\"answer\": \"¡Correcto! Tu respuesta x^2 + C es una antiderivada de 2x, porque la derivada de x^2 + C es 2x, que coincide con el integrando. Expresiones interpretadas: integrando 2*x y respuesta x^2 + C.\", \"steps\": [\"Derivamos tu respuesta: d/dx (x^2 + C) = 2x.\", \"El resultado coincide con el integrando 2x, así que tu respuesta es correcta.\"], \"rule\": \"Regla de la potencia\", \"confidence\": 0.95, \"source\": [\"indefinite_integrals/basic_rules.md\"]}"
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "transfer_to_agent",
+                "args": {
+                  "agent_name": "verifier_agent"
+                }
+              },
+              {
+                "name": "check_student_antiderivative",
+                "args": {
+                  "integrand": "2*x",
+                  "candidate": "x**2 + C"
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "cubik_team",
+        "user_id": "student_verifier_correct_answer",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "coordinator_detail_level_and_progress_multi_tool",
+      "conversation": [
+        {
+          "invocation_id": "inv-4",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Quiero explicaciones detalladas de ahora en adelante, y dime cual es mi progreso hasta ahora"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "{\"answer\": \"Guardé tu preferencia: de ahora en adelante recibirás explicaciones detalladas. Sobre tu progreso, todavía no tienes intentos registrados en esta sesión. ¡Cuando quieras empezar a practicar, te guío paso a paso!\", \"steps\": [\"Se guardó la preferencia de explicación en nivel detallado.\", \"Se consultó el registro de práctica, que aún no tiene ejercicios.\"], \"rule\": null, \"confidence\": 1.0, \"source\": null}"
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "set_explanation_level",
+                "args": {
+                  "level": "detallado"
+                }
+              },
+              {
+                "name": "progress_agent"
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "cubik_team",
+        "user_id": "student_coordinator_detail_level_and_progress_multi_tool",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "verifier_wrong_answer_then_progress_two_turns",
+      "conversation": [
+        {
+          "invocation_id": "inv-5a",
+          "user_content": {
+            "parts": [
+              {
+                "text": "La integral de cos(x) dx es -sin(x) + C, ¿está bien?"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "{\"answer\": \"Casi, pero no es correcta: la derivada de -sin(x) + C es -cos(x), no cos(x). La antiderivada de cos(x) es sin(x) + C, sin el signo negativo. Expresiones interpretadas: integrando cos(x) y respuesta -sin(x) + C.\", \"steps\": [\"Derivamos tu respuesta: d/dx (-sin(x) + C) = -cos(x).\", \"Eso no coincide con el integrando cos(x); revisa el signo, que aparece en la integral de sin(x) pero no en la de cos(x).\"], \"rule\": \"Antiderivadas trigonométricas básicas\", \"confidence\": 0.95, \"source\": [\"indefinite_integrals/basic_rules.md\"]}"
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "transfer_to_agent",
+                "args": {
+                  "agent_name": "verifier_agent"
+                }
+              },
+              {
+                "name": "check_student_antiderivative",
+                "args": {
+                  "integrand": "cos(x)",
+                  "candidate": "-sin(x) + C"
+                }
+              }
+            ],
+            "intermediate_responses": []
+          }
+        },
+        {
+          "invocation_id": "inv-5b",
+          "user_content": {
+            "parts": [
+              {
+                "text": "¿Cómo voy en mi práctica?"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "text": "{\"answer\": \"Llevas 1 intento registrado en esta sesión y todavía no has resuelto ningún ejercicio correctamente. ¡Ánimo, equivocarse es parte de aprender, sigue practicando!\", \"steps\": [\"Se consultó tu registro de práctica: 1 intento, 0 resueltos.\"], \"rule\": null, \"confidence\": 1.0, \"source\": null}"
+              }
+            ],
+            "role": "model"
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "progress_agent"
+              }
+            ],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "cubik_team",
+        "user_id": "student_verifier_wrong_answer_then_progress_two_turns",
+        "state": {}
+      }
+    }
+  ]
+}
