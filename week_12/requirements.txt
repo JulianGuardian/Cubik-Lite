@@ -1,0 +1,9 @@
+# Eval pipeline extras on top of the project's own requirements.
+-r ../requirements.txt
+
+# adk eval needs the [eval] extra (rouge-score, tabulate, vertexai via google-cloud-aiplatform).
+# If pip backtracks for a long time on the extra, install the pieces it needs directly:
+#   pip install rouge-score tabulate nltk google-cloud-aiplatform
+google-adk[eval]>=2.10
+google-genai
+pydantic>=2.0
