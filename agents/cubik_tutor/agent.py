@@ -23,6 +23,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from observability import TOOL_LOGGING, setup_tracing
+
+# Before ADK is imported: every run is traced to Langfuse (no-op without LANGFUSE_* keys).
+setup_tracing()
+
 import retriever
 from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
@@ -250,4 +255,5 @@ root_agent = Agent(
         get_progress_summary,
         reset_practice_log_tool,
     ],
+    **TOOL_LOGGING,
 )

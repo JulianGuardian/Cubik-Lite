@@ -36,6 +36,7 @@ from google.adk.tools import ToolContext
 from google.adk.tools.agent_tool import AgentTool
 from google.genai import types
 from math_tools import check_antiderivative, check_definite_integral, solve_integral
+from observability import TOOL_LOGGING  # tracing itself is set up by the cubik_tutor import above
 
 PROMPTS_DIR = REPO_ROOT / "prompts" / "team"
 
@@ -137,6 +138,7 @@ theory_agent = Agent(
     instruction=student_facing_instruction("theory"),
     tools=[search_knowledge_base],
     **NO_TRANSFERS,
+    **TOOL_LOGGING,
 )
 
 solver_agent = Agent(
@@ -157,6 +159,7 @@ solver_agent = Agent(
         log_practice_attempt,
     ],
     **NO_TRANSFERS,
+    **TOOL_LOGGING,
 )
 
 verifier_agent = Agent(
@@ -175,6 +178,7 @@ verifier_agent = Agent(
         search_knowledge_base,
     ],
     **NO_TRANSFERS,
+    **TOOL_LOGGING,
 )
 
 progress_agent = Agent(
@@ -184,6 +188,7 @@ progress_agent = Agent(
     description="Summarizes the student's practice progress per technique.",
     instruction=load_prompt("progress"),
     tools=[get_progress_summary],
+    **TOOL_LOGGING,
 )
 
 root_agent = Agent(
@@ -203,4 +208,5 @@ root_agent = Agent(
         reset_practice_log_tool,
         AgentTool(agent=progress_agent),
     ],
+    **TOOL_LOGGING,
 )
